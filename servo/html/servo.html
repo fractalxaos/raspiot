@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<!-- Courtesy ruler for editing this file
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+-->
+<html>
+<head>
+<title>Servo Control</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+    background-image: url("../static/chalk.jpg");
+}
+h2 {
+    font: bold 24px arial, sans-serif;
+}
+#mainContainer {
+    width: 355px;
+    text-align: center;
+    margin: auto;
+}
+.infoText {
+    width: 350px;
+    font: normal 16px arial, sans-serif;
+    text-align: left;
+    margin: auto;
+}
+#frmServoControl {
+    width: 350px;
+    font: bold 16px arial, sans-serif;
+    margin: auto;
+    border: 1px solid black;
+}
+#debugInfo {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+#angleSet {
+   width: 300px;
+   height: 40px;
+}
+</style>
+</head>
+
+<body onload="setServoAngle()">
+
+<div id="mainContainer">
+<h3>Servo Control</h3>
+<div class="infoText">
+Demonstrates control of a servo connected to
+the Raspberry Pi GPIO.
+</div>
+
+<br>
+
+<form id="frmServoControl" action="servo.php" method="post"
+  target="debugInfo">
+  <label for="angle">Servo Angle (between 0 and 180)</label><br>
+  <input type="range" id="angleSet" name="angleSet" min="0" max="180"
+   step="1" onchange="setServoAngle()"><br>
+   Angle: <span id="angleVal"></span><br><br>
+  <label for="motion">Continuous motion:</label>
+  <input type="checkbox" id="motion" name="motion"
+     value="continuous" onchange="setContinuousMotion()"><br>
+  <input type="hidden" id="runState" name="runState" value="init"/>
+</form>
+
+<iframe id="debugInfo" name="debugInfo"></iframe>
+
+</div>
+
+<script>
+
+var runState = document.getElementById("runState");
+var angleSet = document.getElementById("angleSet");
+var angleVal = document.getElementById("angleVal");
+var motion = document.getElementById("motion");
+
+angleVal.innerHTML = angleSet.value;
+
+angleSet.oninput = function() {
+  angleVal.innerHTML = this.value;
+}
+
+function setContinuousMotion() {
+   if (motion.checked) {
+       runState.value = "startContinuous";
+   } else {
+       runState.value = "stopContinuous";
+   }
+   frmServoControl.submit();
+} 
+
+function setServoAngle() {
+   runState.value = "setAngle";
+   frmServoControl.submit()
+}
+
+</script>
+
+</body>
+</html>
