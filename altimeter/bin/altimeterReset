@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# This script sends a signal (raises a flag) to the altimeter
+# agent process, telling the process to set the altimeter to
+# the current barometric pressure.
+
+echo resetting altimeter...
+
+touch /tmp/altimeter/resetAltimeter
+
