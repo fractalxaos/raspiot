@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<!-- Courtesy ruler for editing this file
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+-->
+<html>
+<head>
+<title>Push Button</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+    background-image: url("../static/chalk.jpg");
+}
+h2 {
+    font: bold 24px arial, sans-serif;
+}
+h4 {
+    font: bold 16px arial, sans-serif;
+}
+#mainContainer {
+    width: 740px;
+    text-align: center;
+    margin: auto;
+}
+.infoText {
+    width: 350px;
+    font: normal 16px arial, sans-serif;
+    text-align: left;
+    margin: auto;
+}
+.dataCell {
+    display: inline-block;
+    padding: 5px;
+    font: bold 18px arial, sans-serif;
+    text-align: center;
+    margin: auto;
+    /*border: 1px solid black;*/
+}
+.dataItem {
+    display: inline-block;
+    padding-right: 1px;
+    padding-left: 10px;
+    text-align: right;
+    line-height: 130%;
+    vertical-align: top;
+    /*border: 1px solid black;*/
+}
+.dataValue {
+    display: inline-block;
+    text-align: left;
+    padding-right: 10px;
+    padding-left: 1px;
+    line-height: 130%;
+    vertical-align: top;
+    /*border: 1px solid black;*/
+}
+#frmAgent {
+    display: hidden;
+}
+#iframe_a {
+    width:50%;
+    border:none;
+}
+</style>
+</head>
+
+<body onload="main()">
+
+<div id="mainContainer">
+<h3>Push Button Monitor</h3>
+<div class="infoText">
+<p>Demonstrates web  GPIO control by monitoring the number
+of times a push button, connected to the Raspberry
+Pi GPIO, has been pressed. Also starts the push button
+agent background process, if it is not running. The agent
+launches a callback function that updates the pushbutton
+count, stored in a file, each time the button gets pushed.
+</p>
+<p>
+This web page uses Javascript to periodically send XML
+requests for the button push count, which is stored in a
+dynamic JSON file on the raspbery pi.
+</div>
+
+<div class="dataCell">
+<div class="dataItem">
+Button Pushed:<br>
+Last push:<br>
+Status:
+</div>
+<div class="dataValue">
+<span id="pushbuttonCount"></span><br>
+<span id="date"></span>&nbsp;
+<span id="time"></span><br>
+<span id="onlineStatus"></span>
+</div>
+</div>
+
+<br>
+
+<form id="frmAgent" action="pushbutton.php" method="post"
+ target="iframe_a">
+</form>
+<iframe id="iframe_a" name="iframe_a"></iframe>
+
+</div>
+
+<script>
+"use strict";
+
+/* Global constants */
+
+var PUSH_BUTTON_DATA_URL = "dynamic/pushButtonData.js";
+
+/* Global DOM objects */
+
+// Text Elements
+var pushbuttonCount = document.getElementById("pushbuttonCount");
+var date_t = document.getElementById("date");    
+var time_t = document.getElementById("time");    
+var onlineStatus = document.getElementById("onlineStatus");
+
+/* Global objects */
+
+var httpRequest = new XMLHttpRequest();
+
+/* Global variables */
+
+function main() {
+    startAgent();
+
+    // Register call back function to process client http requests
+    httpRequest.onreadystatechange = function() {
+        if (httpRequest.readyState == 4 && httpRequest.status == 200) {
+            var dataArray = JSON.parse(httpRequest.responseText);
+            displayData(dataArray[0]);
+        } else if (httpRequest.readyState == 4 && httpRequest.status == 404) {
+            displayOfflineStatus();
+        }
+    };
+
+
+    // Register call back to deal with web server not responding
+    httpRequest.timeout = 3000;
+    httpRequest.ontimeout = function(e) {
+        displayOfflineStatus();
+    };
+
+    /*
+       Get sensor data web service.  
+       Setup up polling intervals to get sensor data
+       from web service.
+    */
+    getPushButtonData();
+    setInterval(getPushButtonData, 500);
+}
+
+function getPushButtonData() {
+    httpRequest.open("POST", PUSH_BUTTON_DATA_URL, true);
+    httpRequest.send();
+}
+
+function displayData(dataItem) {
+
+    displayTime(dataItem);
+    pushbuttonCount.innerHTML = dataItem.count + " times";
+    onlineStatus.innerHTML = "online";
+    onlineStatus.style.color = "green";
+}
+
+function displayOfflineStatus() {
+    pushbuttonCount.innerHTML = "n/a";
+    date_t.innerHTML = "";
+    time_t.innerHTML = "";
+    onlineStatus.innerHTML = "offline";
+    onlineStatus.style.color = "red";
+}
+
+function displayTime(dataItem) {
+    var date, time, hourminute;
+    var localDateObj, localTimeZone, timeZoneShift;
+    date = dataItem.time.split(" ")[0];
+    time = dataItem.time.split(" ")[1];
+    hourminute = time.split(":")[0] + ":" + time.split(":")[1];
+    localDateObj = new Date();
+    localTimeZone = localDateObj.getTimezoneOffset() / 60;
+    if (Math.sign(localTimeZone)) {
+        timeZoneShift = "-";
+    } else {
+        timeZoneShift = "+"
+    }
+    date_t.innerHTML = date;    
+    //time_t.innerHTML = hourminute;
+    time_t.innerHTML = time;
+}
+
+function startAgent() {
+   frmAgent.submit();
+}
+
+</script>
+
+</body>
+</html>
