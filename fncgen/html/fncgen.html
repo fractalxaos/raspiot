@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<!-- Courtesy ruler for editing this file
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+-->
+<html>
+<head>
+<title>Function Generatior</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+    background-image: url("../static/chalk.jpg");
+}
+h2 {
+    font: bold 24px arial, sans-serif;
+}
+.infoText {
+    padding: 20px;
+    font: normal 16px arial, sans-serif;
+    text-align: left;
+    margin: auto;
+}
+div.closeIcon {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+}
+#mainContainer {
+    position: relative;
+    width: 355px;
+    text-align: center;
+    margin: auto;
+    border: 1px solid black;
+}
+#frmControl {
+    width: 350px;
+    font: bold 16px arial, sans-serif;
+    margin: auto;
+    /*border: 1px solid black;*/
+}
+#debugFrame {
+    width: 100%;
+    /*height: 0px;*/
+    font: normal 12px arial, sans-serif;
+    text-align: left;
+    margin: auto;
+    border: none;
+}
+#waveSel {
+    width: 150px;
+    text-align: left;
+    margin-left: 100px;
+}
+#btnStart {
+    font: bold 16px arial, sans-serif;
+}
+#freqSet {
+    width: 50px;
+    font: bold 16px arial, sans-serif;
+}
+#ampSet {
+   width: 300px;
+   height: 40px;
+}
+#dutySet {
+   width: 300px;
+   height: 40px;
+}
+</style>
+</head>
+
+<body onload="init()" onunload="end()">
+
+<div id="mainContainer">
+
+<div class="closeIcon">
+<img id="closeTab" src="../static/closeIcon.png">
+</div>
+
+<h3>Function Generator</h3>
+<div class="infoText">
+Demonstrates a web based function generator using
+an I2C digital to analog converter attached to the
+Raspberry Pi.
+</div>
+
+<form id="frmControl" action="fncgen.php" method="post"
+  target="debugFrame">
+
+  <p>Select waveform:</p>
+  <div id="waveSel">
+  <input type="radio" id="sin_wave" name="waveform" value="sin"
+    onchange="setWaveform()" checked>
+  <label for="sin_wave">Sine Wave</label><br>
+  <input type="radio" id="sqr_wave" name="waveform" value="sqr"
+    onchange="setWaveform()">
+  <label for="sqr_wave">Square Wave</label><br>
+  <input type="radio" id="tri_wave" name="waveform" value="tri"
+    onchange="setWaveform()">
+  <label for="tri_wave">Triangle Wave</label><br>
+  <input type="radio" id="saw_wave" name="waveform" value="saw"
+    onchange="setWaveform()">
+  <label for="saw_wave">Sawtooth Wave</label><br>  
+  </div>
+
+  <div class="infoText">
+  Enter a frequency between 0 and 100 Hz.  May enter a
+  fractional frequency, e.g., 0.01.</div>
+  <label for="freqSet">Frequency (Hz)</label><br><br>
+  <input type="text" id="freqSet" name="freqSet" value="20.0"
+    onchange="setFrequency()"><br><br>
+
+  <label for="amplitude">Amplitude <span id="ampVal"></span> (volts)</label><br>
+  <input type="range" id="ampSet" name="ampSet" min="0" max="3.2"
+    step="0.1" onchange="setAmplitude()"><br>
+
+  <label for="dutycycle">Duty Cycle <span id="dutyVal"></span> (%)</label><br>
+  <input type="range" id="dutySet" name="dutySet" min="0" max="100"
+    step="1" onchange="setDutyCycle()"><br>
+
+  <input type="button" id="btnStart" value="Turn ON Generator"
+    onclick="startGenerator()">
+
+  <input type="hidden" id="runState" name="runState" value="off"/>
+  <input type="hidden" id="debugMode" name="debugMode" value="false">
+</form>
+
+<iframe id="debugFrame" name="debugFrame"></iframe>
+
+</div>
+
+<script>
+"use strict";
+var _DEBUG_MODE = "false";
+
+var freqSet = document.getElementById("freqSet");
+var ampSet = document.getElementById("ampSet");
+var ampVal = document.getElementById("ampVal");
+var dutySet = document.getElementById("dutySet");
+var dutyVal = document.getElementById("dutyVal");
+var btnStart = document.getElementById("btnStart");
+var runState = document.getElementById("runState");
+var debugMode = document.getElementById("debugMode");
+var debugFrame = document.getElementById("debugFrame");
+
+// Close button event handler   
+document.getElementById("closeTab").onclick = function() {
+    runState.value = "off";
+    frmControl.submit();
+    setTimeout(function(){ window.close(); }, 600);
+}
+
+ampVal.innerHTML = ampSet.value;
+ampSet.oninput = function() {
+    ampVal.innerHTML = this.value;
+}
+
+dutyVal.innerHTML = dutySet.value;
+dutySet.oninput = function() {
+    dutyVal.innerHTML = this.value;
+}
+
+function init(){
+    runState.value = "off";
+    debugMode.value = _DEBUG_MODE;
+    if(_DEBUG_MODE == "true") {
+        debugFrame.height = "60";
+    } else {
+        debugFrame.height = "0";
+    }
+    frmControl.submit();
+}
+
+function end(){
+    runState.value = "off";
+    frmControl.submit();
+}
+
+function setWaveform() {
+  if(runState.value == "on") {
+      frmControl.submit();
+  }
+}
+
+function setFrequency() {
+  if(runState.value == "on") {
+      verifyFrequency();
+      frmControl.submit();
+  }
+}
+
+function setAmplitude() {
+  if(runState.value == "on") {
+      frmControl.submit();
+  }
+}
+
+function setDutyCycle() {
+  if(runState.value == "on") {
+      frmControl.submit();
+  }
+}
+
+function startGenerator() {
+  if(runState.value == "off") {
+      verifyFrequency();
+      runState.value = "on";
+      btnStart.value = "Turn Generator OFF";
+      frmControl.submit();
+  }
+  else {
+      runState.value = "off";
+      btnStart.value = "Turn Generator ON";
+      frmControl.submit();
+  }
+}
+
+function verifyFrequency(){
+    var freq = Number(freqSet.value);
+    if(isNaN(freq) || freq < 0.0 || freq > 100.0) {
+        alert("Invalid frequency");
+    }
+}
+</script>
+
+</body>
+</html>
