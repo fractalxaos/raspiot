@@ -4,8 +4,7 @@
 #
 # Description: This module acts as an interface between the ADS1115
 # analog to digital converter and downstream applications that use the
-# data.  Class methods get pressure, altitude, and temperature data
-# from the ADS1115 sensor.  This module acts as a library module that
+# data.  This module acts as a library module that
 # can be imported into and called from other Python programs.
 #
 # Copyright 2021 Jeff Owrey
