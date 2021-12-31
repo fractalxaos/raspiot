@@ -6,11 +6,6 @@
 # This module acts as an hardware abstraction layer providing an
 # interface between the MCP4725 device and higher level Python scripts.
 #
-# Note: the following line must be added to the /etc/sudoers
-# file so that the www-data user can start this as a process.
-# 
-#    www-data ALL=(ALL) NOPASSWD: /home/pi/bin/fncgen.py
-#
 # Copyright 2021 Jeff Owrey
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -30,7 +25,6 @@
 #
 #12345678901234567890123456789012345678901234567890123456789012345678901234567890
  
-# Import libraries.
 import smbus
 import time
 
@@ -57,16 +51,30 @@ class mcp4725:
     def __init__(self, sAddr=DEFAULT_BUS_ADDRESS,
                        sbus=DEFAULT_BUS_NUMBER,
                        debug=False):
-         # Instantiate a smbus object.
+        """
+        Description: Creates an smbus object for use by this instance
+        of this class.
+        Parameters:
+            sAddr - the serial bus address of the MCP4725 device
+            sbus  - the bus number of the bus to which the MCP4725 connected
+            debug - boolean value: True for debug mode, False otherwise
+        Returns: nothing
+        """
+        # Instantiate a smbus object.
         self.sensorAddr = sAddr
         self.bus = smbus.SMBus(sbus)
         self.debugMode = debug
     ## end def
 
     def write_fast(self, val):
-        # Perform a 'fast mode' write to update the DAC value.
-        # Will not enter power down, update EEPROM, or any other state
-        # beyond the 12-bit DAC value.
+        """
+        Description: Performs a 'fast mode' write to update the DAC value.
+        Will not enter power down, update EEPROM, or any other state
+        other than updating the DAC register.
+        Parameters:
+            val - 12 bit positive number to write to the DAC register
+        Returns: nothing
+        """
         assert 0 <= val <= 4095
 
         # Write data to the DAC register - 2 bytes in fast mode.
@@ -98,8 +106,14 @@ class mcp4725:
     ## end def
 
     def write_block(self, dataBlock):
-        # Writes a 32 byte block of data to the DAC at the maximum
-        # rate data can be written to the DAC register.
+        """
+        Description: Writes a 32 byte block of data to the DAC at
+        the maximum rate data can be written to the DAC register.
+        Parameters:
+            dataBlock - a list object containing the data to be
+                        written to the DAC
+        Returns: nothing
+        """
         block = dataBlock.copy()
         bLen = len(block)
         bData = []
@@ -123,12 +137,17 @@ class mcp4725:
     ## end def        
 
     def write_dac(self, val):
-        # Perform a write to update the DAC register.
-        # Will not enter power down, update EEPROM, or any other state beyond
-        # the 12-bit DAC value.
+        """
+        Description: Performs a write to update the DAC register.
+        Will not enter power down, update EEPROM, or any other state other
+        than updating the DAC register.
+        Parameters:
+            val - 12 bit positive value to write to the DAC register
+        Returns: nothing
+        """
         assert 0 <= val <= 4095
 
-        # Write data to the DAC register - 3 bytes in write mode.
+        # Write data to the DAC register - 3 bytes in normal mode.
         #        -------------------------------------------------
         #    bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
         #        -------------------------------------------------
@@ -156,9 +175,15 @@ class mcp4725:
     ## end def
 
     def write_eeprom(self, val):
-        # Perform a write to update both the DAC register and the EEPROM.
-        # Will not enter power down or any other state beyond
-        # the 12-bit DAC value.
+        """
+        Description: Performs a write to update both the DAC register
+        and the EEPROM.  Will not enter power down or any other state
+        other than updating the EEPROM register.
+        Parameters:
+            val - 12 bit positive value to write to the DAC register
+        Returns: nothing
+
+        """
         assert 0 <= val <= 4095
 
         # Write data to the DAC register - 3 bytes in write mode.
@@ -191,6 +216,12 @@ class mcp4725:
     ## end def
 
     def read_dac(self):
+        """
+        Description: Reads the DAC register and extracts the
+        DAC value.
+        Parameters: none
+        Returns: the 12 bit value in the register
+        """
         # Read data from the DAC register - 3 bytes in write mode.
         #        -------------------------------------------------
         #    bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
@@ -205,8 +236,8 @@ class mcp4725:
         #        -------------------------------------------------
         # byte 4 | d7  | d6  | d5  | d4  | d3  | d2  | d1  | d0  |
         #        -------------------------------------------------
-        # d11-d0 in bytes 2 and 3 contain the value in the DAC
-        # register, while bytes 4 and 5 contain the value in the
+        # d11-d0 in bytes 1 and 2 contain the value in the DAC
+        # register, while bytes 3 and 4 contain the value in the
         # EEPROM.  In both cases the value expressed as an unsigned
         # integer between 0 and 4095.
 
@@ -226,10 +257,15 @@ class mcp4725:
     ## end def
 
     def read_eeprom(self):
+        """
+        Description: Reads the DAC register and extracts the value in
+        the EEPROM.
+        Parameters: none
+        Returns: the 12 bit EEPROM value in the register
+        """
+        # Read the DAC register and return the 12-bit EEPROM value.
         # Meaning of bits in the five bytes returned the same as described
         # above in the comments to the read_dac command.
-
-        # Read the DAC register and return the 12-bit EEPROM value.
         bData = self.bus.read_i2c_block_data(self.sensorAddr, _DAC_REG, 5)
 
         if self.debugMode:
@@ -247,6 +283,12 @@ class mcp4725:
    ## end def
 
     def poll_eeprom_write_status(self):
+        """
+        Description: Periodically reads the DAC status byte and exits
+        when the EEPROM write complete bit gets set.
+        Parameters: none
+        Returns: nothing
+        """
         # Poll the EEPROM write complete status bit.  Raise an
         # exception if the polling process times out.
 
@@ -255,6 +297,8 @@ class mcp4725:
             eeprom_write_status = self.bus.read_byte(self.sensorAddr)
             if self.debugMode and False:
                 print("eeprom write status: %d" % eeprom_write_status)
+            # The forth bit (b3) of the status registeer gets set
+            # when the EEPROM write operation completes.
             if eeprom_write_status & 0x80 > 0:
                 return;
             time.sleep(0.01)
@@ -266,6 +310,12 @@ class mcp4725:
      ### TEST FUNCTIONS ###
 
 def write_read_register():
+    """
+    Description: Verfies that values can be successfully written to
+    the DAC register.
+    Parameters: none
+    Returns: nothing
+    """
     dac1.write_fast(4011)
     dac_val = dac1.read_dac()
     print('dac read: %d\n' % dac_val)
@@ -288,6 +338,11 @@ def write_read_register():
 # end def
 
 def write_fast():
+    """
+    Description: Verfies fast write mode at maximum sample rate.
+    Parameters: none
+    Returns: nothing
+    """
     dac1.debugMode = False
     nSamples = 1000
     stepSize = int(4000 / nSamples)
@@ -301,6 +356,12 @@ def write_fast():
 ## end def
 
 def write_block():
+    """
+    Description: Verfies that blocks of data can be successfully
+    written to the DAC register.
+    Parameters: none
+    Returns: nothing
+    """
     dac1.debugMode = False
     nSamples = 1000
     dy = 4095.0 / float(nSamples)
@@ -316,6 +377,11 @@ def write_block():
 ## end def
 
 def set_voltage(volts):
+    """
+    Description: Verfies that the DAC can output a specific voltage.
+    Parameters: none
+    Returns: nothing
+    """
     bVal = round((volts / 3.25) * 4096)
     dac1.write_fast(bVal)
 ## end def

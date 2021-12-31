@@ -1,11 +1,36 @@
 #!/usr/bin/python3 -u
 
-# This interactive python program moves a servo using the GPIO
-# pulse width modulation functions. The user may enter the
-# following:
-#    n an integer angle between 0 and 180 degrees
-#   'c' for continuous oscillation mode
-#   's' to exit the program
+# Description: This interactive python program moves a servo using the GPIO
+# pulse width modulation functions.
+# Command line arguments:
+#  -a followed by angle between 0 and 180 degrees
+#  -c for continuous oscillation mode
+#  -k to stop all running instances and exit
+#  -v verbose debug mode
+#
+# Note: the following line must be added to the /etc/sudoers
+# file so that the www-data user can start this script as a background.
+#
+#   www-data ALL=(ALL) NOPASSWD: /home/pi/bin/servo.py
+#
+# Copyright 2021 Jeff Owrey
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see http://www.gnu.org/license.
+#
+# Revision History
+#   * v10 released 12 Dec 2021 by J L Owrey; first release
+#
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
 
    ### IMPORT MODULES ###
 
@@ -44,41 +69,40 @@ verboseMode = False
 
 def setDutyCycle(angle):
     """
-    Description:
-    Sets the duty cycle of the PWM signal to the servo.
+    Description: Sets the duty cycle of the PWM signal to the servo.
     Parameters:
         angle - the angle to which to move the servo arm
     Returns: nothing.
-    """
-    # Duty cycle (in percent) is 100 times pulse width divided by the
-    # period tpwm of the pulse width modulated signal.  The period is
-    # the reciprocal of the frequency of the pulse width modulated signal.
-    #    ____                                  ____
-    #   |    |________________________________|    |_________
-    #   |<-->|
-    #    tmin 
-    #   |<---------------tpwm---------------->|
-    #
-    #    _________                             _________
-    #   |         |___________________________|         |____
-    #   |<--tmax->|
-    #   |<---------------tpwm---------------->|
-    #
-    # The servo is controlled by a pulse width modulated signal where
-    # the width of the pulse varies from a minimum value tmin to a
-    # maximum value tmax.  These values defined by the global constants
-    # SERVO_MIN_PULSE_WIDTH and SERVO_MAX_PULSE_WIDTH.  The pulse width,
-    # tp, where tmin < tp < tmax, determines the number of degrees the
-    # servo arm moves.  For a servo arm capable of 180 degrees movement,
-    #
-    #    tp = ((tmax - tmin)/180)*angle + tmin
-    #
-    # where angle is in degrees, and 
-    #     
-    #    duty cycle(%) = 100*tp/tpwm
-    #
-    # where tpwm is the period of the pulse width modulated signal.
 
+    Duty cycle (in percent) is 100 times pulse width divided by the
+    period tpwm of the pulse width modulated signal.  The period is
+    the reciprocal of the frequency of the pulse width modulated signal.
+       ____                                  ____
+      |    |________________________________|    |_________
+      |<-->|
+       tmin 
+      |<---------------tpwm---------------->|
+    
+       _________                             _________
+      |         |___________________________|         |____
+      |<--tmax->|
+      |<---------------tpwm---------------->|
+    
+    The servo is controlled by a pulse width modulated signal where
+    the width of the pulse varies from a minimum value tmin to a
+    maximum value tmax.  These values defined by the global constants
+    SERVO_MIN_PULSE_WIDTH and SERVO_MAX_PULSE_WIDTH.  The pulse width,
+    tp, where tmin < tp < tmax, determines the number of degrees the
+    servo arm moves.  For a servo arm capable of 180 degrees movement,
+    
+       tp = ((tmax - tmin)/180)*angle + tmin
+    
+    where angle is in degrees, and 
+         
+       duty cycle(%) = 100*tp/tpwm
+    
+    where tpwm is the period of the pulse width modulated signal.
+    """
     pulsewidth = MS_PER_DEGREE * angle + SERVO_MIN_PULSE_WIDTH
     dutyCycle = 100.0 * pulsewidth / PWM_PERIOD # percent duty cycle
     pwm.ChangeDutyCycle(dutyCycle)
@@ -86,8 +110,11 @@ def setDutyCycle(angle):
 
 def setServo(angle):
     """
-    Description:
-    Moves the servo arm to a specific angle and leaves it there.
+    Description: Moves the servo arm to a specific angle and leaves
+    it there.
+    Parameters:
+        angle - the angle to which to move the servo arm
+    Returns: nothing.
     """
     # Move the servo to the supplied angle.
     setDutyCycle(angle)
@@ -96,8 +123,9 @@ def setServo(angle):
 
 def continuousMotion():
     """
-    Description:
-    Moves the servo arm back and forth in continuous motion.
+    Description: Moves the servo arm back and forth in continuous motion.
+    Parameters: none
+    Returns: nothing.
     """
     # Set initial servo angle to 0.
     setServo(0)
@@ -116,10 +144,11 @@ def continuousMotion():
 
 def setup():
     """
-    Description:
-    Sets up the GPIO interface mode, and sets up to output a pulse
-    width modulated signal the GPIO output pin connected to the servo
+    Description: Sets up the GPIO interface mode, and sets up to output a
+    pulse width modulated signal the GPIO output pin connected to the servo
     control input (white lead). 
+    Parameters: none
+    Returns: nothing.
     """
     global pwm
     # Setup the GPIO interface.
@@ -134,9 +163,12 @@ def setup():
 
 def cleanup(signal, frame):
     """
-    Description:
-    Resets the servo arm back to zero degrees and restores the
-    GPIO interface to default conditions.
+    Description: Resets the servo arm back to zero degrees and
+    restores the GPIO interface to default conditions.
+    Parameters: 
+        signal - dummy parameter
+        frame  - dummy parameter
+    Returns: nothing.
     """
     pwm.ChangeDutyCycle(0) # set servo angle to 0 degrees
     GPIO.output(SERVO_CONTROL_PIN, False)
@@ -146,9 +178,10 @@ def cleanup(signal, frame):
 
 def killOtherInstances():
     """
-    Description:
-    Allows only one instance to run at a time to avoid
+    Description: Allows only one instance to run at a time to avoid
     possible smbus bus contention.
+    Parameters: none
+    Returns: nothing.
     """
     thisProc = os.path.basename(__file__)
 
@@ -175,7 +208,7 @@ def getCLarguments():
         -a {number} angle (degrees)
         -c continuous motion
         -v verbose debug mode
-    Parameters: None
+    Parameters: none
     Returns: nothing.
     """
     global angle, runContinuous, killAllInstances, verboseMode
@@ -211,12 +244,21 @@ def getCLarguments():
 ## end def
 
 def main():
-    # Clean up GPIO when this process killed.
+    """
+    Description: Gets command line arguments and sets the servo angle
+    or runs it continuously. Stops any previously running instances.
+    Parameters: none
+    Returns: nothing
+    """
+
+    # Clean up GPIO when this process gets killed.
     signal.signal(signal.SIGTERM, cleanup)
     signal.signal(signal.SIGINT, cleanup)
 
+    # Get command line arguments.
     getCLarguments()
 
+    # Kill all previously launched instances of this script.
     killOtherInstances()
     if killAllInstances:
         exit(0)
@@ -229,11 +271,14 @@ def main():
         # complete range of motion.
         continuousMotion()
     else:
+        # Else move the servo to the specified angle and leave it there.
         setServo(angle)
 
+    # Clean up the GPIO interface.
     cleanup(0,0)
 ## end def
 
 if __name__ == '__main__':
     main()
+
 ## end module

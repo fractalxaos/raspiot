@@ -68,6 +68,13 @@ killAllInstances = False
    ### WAVEFORM FUNCTIONS ###
 
 def getDcWave(amplitude=_DEFAULT_AMPLITUDE):
+    """
+    Description: Generates a DC, that is, constant waveform.
+    Parameters:
+        amplitude - output level of the DC waveform
+    Returns: a list object containing a single element, the amplitude
+        of the DC waveform
+    """
     dacVal = (amplitude / _MAX_AMPLITUDE) * _DAC_RESOLUTION
     wfrm = [round(dacVal)]
     return wfrm
@@ -76,8 +83,11 @@ def getDcWave(amplitude=_DEFAULT_AMPLITUDE):
 def getSineWave(frequency=_DEFAULT_FREQUENCY,
                 amplitude=_DEFAULT_AMPLITUDE):
     """
-    Description:
-    Generates a list containing sine waveform data.
+    Description: Generates a sine wave.
+    Parameters:
+        frequency - the frequency in Hertz
+        amplitude - the signal level in Volts
+    Returns: a list object containing the waveform data
     """
     numSamples = getSampleRate(frequency)
     amplitude = (amplitude / _MAX_AMPLITUDE) * _DAC_RESOLUTION / 2.0
@@ -94,8 +104,12 @@ def getSquareWave(frequency=_DEFAULT_FREQUENCY,
                 amplitude=_DEFAULT_AMPLITUDE,
                 dutyCycle=0.5):
     """
-    Description:
-    Generates a list containing square waveform data.
+    Description: Generates a square wave.
+    Parameters:
+        frequency - the frequency in Hertz of the square wave
+        amplitude - the signal level in Volts
+        dutyCycle - the duty cycle in percent of the square wave
+    Returns: a list object containing the waveform data
     """
     numSamples = getSampleRate(frequency)
     amplitude = (amplitude / _MAX_AMPLITUDE) * _DAC_RESOLUTION
@@ -114,8 +128,11 @@ def getSquareWave(frequency=_DEFAULT_FREQUENCY,
 def getTriangleWave(frequency=_DEFAULT_FREQUENCY,
                 amplitude=_DEFAULT_AMPLITUDE):
     """
-    Description:
-    Generates a list containing triangle waveform data.
+    Description: Generates a triangle wave.
+    Parameters:
+        frequency - the frequency in Hertz
+        amplitude - the signal level in Volts
+    Returns: a list object containing the waveform data
     """
     numSamples = getSampleRate(frequency)
     amplitude = (amplitude / _MAX_AMPLITUDE) * _DAC_RESOLUTION
@@ -134,8 +151,11 @@ def getTriangleWave(frequency=_DEFAULT_FREQUENCY,
 def getSawtoothWave(frequency=_DEFAULT_FREQUENCY,
                 amplitude=_DEFAULT_AMPLITUDE):
     """
-    Description:
-    Generates an array containing sawtooth waveform data.
+    Description: Generates a sawtooth wave.
+    Parameters:
+        frequency - the frequency in Hertz
+        amplitude - the signal level in Volts
+    Returns: a list object containing the waveform data
     """
     numSamples = getSampleRate(frequency)
     amplitude = (amplitude / _MAX_AMPLITUDE) * _DAC_RESOLUTION
@@ -154,12 +174,14 @@ _WAVEFORM_FUNCTIONS = [getDcWave, getSineWave, getSquareWave, getTriangleWave, \
 
 def getSampleRate(frequency):
     """
-    Description:
-    Calculates the number of waveform samples to generate based
-    on the frequency of the waveform.  Due to hardware limitations
+    Description: Calculates the number of waveform samples to generate
+    based on the frequency of the waveform.  Due to hardware limitations
     the number of samples must be reduced as frequency goes higher,
     as the hardware cannot handle more than about 1000 samples
     per second.
+    Parameters:
+        frequency - the frequency of the waveform
+    Returns: the number of waveform samples to calculate
     """
     # Calculate samples per hertz.  That is, samples per one period
     # of the waveform, based on speed of DAC.
@@ -169,8 +191,12 @@ def getSampleRate(frequency):
 
 def outputWaveform(waveformData, frequency):
     """
-    Description:
-    Outputs waveform data to the DAC via the mcp4725 driver module.
+    Description: Outputs waveform data to the DAC via the mcp4725
+    driver module.
+    Parameters:
+        waveformData - a list object containing the waveform data
+        frequency - the frequency of the waveform
+    Returns: nothing
     """
     # Zero Hertz wave is DC.  Set the DAC
     # and leave it there.
@@ -246,9 +272,12 @@ def outputWaveform(waveformData, frequency):
 
 def writeOutputDataFile(fname, sData):
     """
-    Description:
-    This function used for test purposes to verify the the waveform
-    data send to the mcp4725 DAC.
+    Description: This function used for test purposes to verify
+    the the waveform data send to the mcp4725 DAC.
+    Parameters:
+        fname - the name of the output file
+        sData - the data string to write to the output file
+    Returns: True if successful, False otherwise
     """
     try:
         fc = open(fname, "w")
@@ -264,9 +293,10 @@ def writeOutputDataFile(fname, sData):
 
 def killOtherInstances():
     """
-    Description:
-    Allows only one instance to run at a time to avoid
+    Description: Allows only one instance to run at a time to avoid
     possible smbus bus contention.
+    Parameters: none
+    Returns: nothing
     """
     thisProc = os.path.basename(__file__)
 
@@ -286,9 +316,13 @@ def killOtherInstances():
 
 def terminateProcess(signal, frame):
     """
-    Description:
-    Sets DAC to zero output voltage when this program gets terminated.
-    Setting the DAC to zero protects the DAC from potential shorts.
+    Description: Sets DAC to zero output voltage when this program gets
+    terminated. Setting the DAC to zero protects the DAC from potential
+    shorts.
+    Parameters:
+        signal - dummy parameter
+        frame  - dummy parameter
+    Returns: nothing
     """
     # To prevent shorts always set the DAC back to zero volts before
     # exiting this process.
@@ -300,13 +334,14 @@ def terminateProcess(signal, frame):
 
 def getCLarguments():
     """
-    Description:
-    Get command line arguments. There is one possible argument
-    Returns nothing.
+    Description: Get command line arguments.
+    Parameters: none
+    Returns: nothing
 
     Usage: fncgen -w WAVEFORM -f FREQUENCY
 
     -w
+      dc  - DC constant signal level
       sin - sine wave (default)
       sqr - square wave
       tri - triangle wave
@@ -317,6 +352,10 @@ def getCLarguments():
     -a amplitude in volts (default 1.0 volts)
 
     -d duty cycle of square wave (default 0.5)
+
+    -k kill all running instances and exit
+
+    -v verbose debug mode
     """
     global waveform, frequency, amplitude, dutyCycle
     global killAllInstances, verboseMode
@@ -367,14 +406,18 @@ def getCLarguments():
 
 def main():
     """
-    Description:
-    Main routine.
+    Description: Main routine.
+    Parameters: none
+    Returns: nothing
     """
     global dac1
 
+    # Register callback function to do cleanup when this script terminated
+    # by CTL-C or kill signal.
     signal.signal(signal.SIGTERM, terminateProcess)
     signal.signal(signal.SIGINT, terminateProcess)
 
+    # Get command line arguments.
     getCLarguments()
 
     # Generate waveform data for selected waveform
@@ -389,9 +432,10 @@ def main():
     elif waveform == 'saw':  
         waveformData = getSawtoothWave(frequency, amplitude)
 
+    # Write new line delimited waveform data to file for debug purposes.
     if debugMode:
         sWaveformData = '\n'.join(map(str,waveformData))
-        print('sample rate: %d' % len(waveformData))
+        print('samples per Hz: %d' % len(waveformData))
         writeOutputDataFile('waveformData.csv', sWaveformData)
         exit(0)
 
@@ -399,10 +443,12 @@ def main():
     # other instances prevents possible smbus contention.
     killOtherInstances()
 
-    # Create instance of digital to analog converter
+    # Create an instance of the digital to analog converter driver class.
     import mcp4725
     dac1 = mcp4725.mcp4725(debug=False)
 
+    # Kill this instance and make a clean exit if -k option entered on
+    # the command line.  Otherwise output the selected waveform. 
     if killAllInstances:
         terminateProcess(0,0)
     else:
@@ -411,4 +457,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 ## end module

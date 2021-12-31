@@ -4,17 +4,22 @@
 # push button switch and prints out the number of times the
 # button has been pushed.
 #
+# Note: the following line must be added to the /etc/sudoers
+# file so that the www-data user can start this as a process.
+# 
+#    www-data ALL=(ALL) NOPASSWD: /home/pi/bin/pushbutton.py
+#
 # Circuit:
 #   SPST momentary closed switch: pin 1 of switch connected
 #   to VCC. Pin 2 connected to digital GPIO pin and to a 10K
 #   Ohm resister.  Other end of the resister connected to GND.
 #   Pushing the button sends a HIGH logic level to the
 #   raspberry pi, otherwise the level is LOW.
-
-# Define GPIO pin used by this example program. This definition
-# is for the GPIO of a Raspberry Pi Model B.  If you are using
-# a Raspberry Pi 3 Model B, then you may need to change the pin
-# number to something else. 
+#
+# Revision History
+#   * v10 released 12 Dec 2021 by J L Owrey; first release
+#
+#12345678901234567890123456789012345678901234567890123456789012345678901234567890
 
     ### IMPORTS ###
 
@@ -27,8 +32,7 @@ import RPi.GPIO as GPIO
 
     ### ENVIRONMENT ###
 
-#_USER = os.environ['USER']
-_USER = "pi"
+_USER = os.environ['USER']
 
     ### FILE AND FOLDER LOCATIONS ###
 
@@ -59,9 +63,8 @@ verboseMode = False
 # Interrupt routine called when the button is pressed.
 def buttonPress(channel):
     """
-    Handles push button press events.  Filters out switch
-    debounce and increments a counter each time the button
-    gets pressed.  Also updates output data file used by 
+    Handles push button press events. Increments a counter each time
+    the button gets pressed and updates the output data file used by 
     web clients.
     """
     global count
@@ -81,9 +84,8 @@ def getTimeStamp():
 ## end def
 
 def terminateProcess(signal, frame):
-    """Send a message to log when the agent process gets killed
-       by the operating system.  Inform downstream clients
-       by removing input and output data files.
+    """When the this process gets killed by the operating system,
+       inform downstream clients by removing the output data file.
        Parameters:
            signal, frame - dummy parameters
        Returns: nothing
@@ -175,10 +177,12 @@ def getCLarguments():
     ### MAIN ROUTINE ###
 
 def main():
-
+    # Register callback function to do cleanup housekeeping
+    # if this script terminated by CTL-c or by kill signal.
     signal.signal(signal.SIGTERM, terminateProcess)
     signal.signal(signal.SIGINT, terminateProcess)
 
+    # Get command line arguments.
     getCLarguments()
 
     # Initialize the GPIO interface.
@@ -197,16 +201,14 @@ def main():
     # Initialize output data file.
     writeOutputFile()
 
+    # Script will run forever or until interrupted CTL-C or kill signal.
     while True:
         time.sleep(0.5)
     ## end while
 ## end def
 
 if __name__ == '__main__':
-    try:    
-        main()
-    except KeyboardInterrupt:
-        print()
+    main()
 
-# end program
+# end module
 

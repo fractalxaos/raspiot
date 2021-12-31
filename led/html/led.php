@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<!-- Courtesy ruler for editing this file
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+-->
 <html>
 <head><title>LED Switch</title></head>
 <meta charset="UTF-8">

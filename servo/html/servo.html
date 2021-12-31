@@ -72,18 +72,24 @@ the Raspberry Pi GPIO.
 
 <script>
 
+// Define pointers to DOM objects.
 var runState = document.getElementById("runState");
 var angleSet = document.getElementById("angleSet");
 var angleVal = document.getElementById("angleVal");
 var motion = document.getElementById("motion");
 
+// Set the displayed angle to the value set by the slider.
 angleVal.innerHTML = angleSet.value;
 
+// Setup a callback function the update the displayed angle
+// whenever the user changes the slider position.
 angleSet.oninput = function() {
   angleVal.innerHTML = this.value;
 }
 
 function setContinuousMotion() {
+   // User has selected or un-selected continuous motion.  So
+   // submit the new run state to the server.
    if (motion.checked) {
        runState.value = "startContinuous";
    } else {
@@ -93,6 +99,8 @@ function setContinuousMotion() {
 } 
 
 function setServoAngle() {
+   // User has selected a servo angle, so submit the angle
+   // to the server.
    runState.value = "setAngle";
    frmServoControl.submit()
 }

@@ -21,6 +21,21 @@
 <div class="debugInfo">
 
 <?php
+/*
+ Script: servo.php
+
+ Description: This script executes the servo python script
+ 'servo.py'.
+
+ Note: the following line must be added to the /etc/sudoers
+ file so that the www-data user can start as a background
+ process the servo.py python script.
+ 
+    www-data ALL=(ALL) NOPASSWD: /home/pi/bin/servo.py
+
+ Revision History
+   * v10 released 12 Dec 2021 by J L Owrey; first release
+*/
 
    ### CONSTANTS ###
 
@@ -70,7 +85,7 @@ function setAngle($angle) {
 }
 
 function doCmd($cmd) {
-    # Run shell command in the background.
+    # Run the command in the background.
     $PID=shell_exec("$cmd > /dev/null 2>&1 & echo $!");
     if(DEBUG == "true") {
         echo "cmd: " . $cmd . "<br>";

@@ -1,5 +1,34 @@
 #!/usr/bin/python3 -u
 
+# Script: oscilloscope.py
+#
+# Description:
+# This script acquires data from the ADS1115 analog to
+# digital converter I2C device and writes the data to the
+# output data file.
+#
+# Note: the following line must be added to the /etc/sudoers
+# file so that the www-data user can start this script as a process.
+# 
+#    www-data ALL=(ALL) NOPASSWD: /home/pi/bin/oscilloscope.py
+#
+# Copyright 2021 Jeff Owrey
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see http://www.gnu.org/license.
+#
+# Revision History
+#   * v10 released 12 Dec 2021 by J L Owrey; first release
+#
 #12345678901234567890123456789012345678901234567890123456789012345678901234567890
 
 import os
@@ -38,6 +67,16 @@ killAllInstances = False
 adc1 = None
 
 def getSamples(sampleSize):
+    """
+    Description:
+    Collects a set of digitized samples from the analog to digital converter.
+
+    Parameters:
+        sampleSize - number of samples to collect
+    Returns: a list containing the samples
+    """
+    global sampleRate
+
     # The sample period tSample must be determined emperically by
     # measuring the time tRead reguired to read a sample from the
     # ADC. To get the sample period add a small guard time before
@@ -55,15 +94,13 @@ def getSamples(sampleSize):
     #       |
     #       +--- read sample from ADC
     #
-    global sampleRate
-
-    lSamples = []
-    lPtr = 0
-
     if sampleRate > _MAXIMUM_SAMPLE_RATE:
         sampleRate = _MAXIMUM_SAMPLE_RATE
     tSample = 1.0 / sampleRate
 
+
+    lSamples = []
+    lPtr = 0
     previousTime = time.time()
     time_init = previousTime
     while True:
@@ -92,6 +129,16 @@ def getSamples(sampleSize):
 ## end def
 
 def convertData(lSamples, dData):
+    """
+    Description:
+    Formats the sample data and stores the sample data in a dictionary
+    object in preparation for being written to the output data file.
+
+    Parameters:
+        lSamples - a list containing the samples from the ADC
+        dData - a dictionary containing the samples and additional info
+    Returns: True if successful, False otherwise
+    """  
     sampleSize = len(lSamples)
     sampleSizeMinus1 = sampleSize - 1
     sData = ''
@@ -106,22 +153,15 @@ def convertData(lSamples, dData):
 
 def writeOutputDataFile(dData):
     """
-    Writes to a file a formatted string containing the sensor data.
-    The file is written to the document dynamic data folder for use
-    by html documents.
-    Parameters: 
-        dData - dictionary object containing sensor data
-    Returns true if successful, false otherwise
-    """
-
-    """
+    Description:
     Write sensor data items to the output data file, formatted as 
     a Javascript file.  This file may then be requested and used by
     by downstream clients, for instance, an HTML document.
+
     Parameters:
         dData - a dictionary containing the data to be written
                    to the output data file
-        Returns: True if successful, False otherwise
+    Returns: True if successful, False otherwise
     """
     # Write a JSON formatted file for use by html clients.  The following
     # data items are sent to the client file.
@@ -155,12 +195,15 @@ def writeOutputDataFile(dData):
 ##end def
 
 def terminateProcess(signal, frame):
-    """Informs downstream clients that this process has been
-       terminiated.  Downstream clients are informed by removing
-       the output data file.
-       Parameters:
-           signal, frame - dummy parameters
-       Returns: nothing
+    """
+    Description:
+    Informs downstream clients that this process has been
+    terminiated.  Downstream clients are informed by removing
+    the output data file.
+
+    Parameters:
+       signal, frame - dummy parameters
+    Returns: nothing
     """
     # Inform downstream clients by removing output data file.
     if os.path.exists(_OUTPUT_DATA_FILE):
@@ -175,6 +218,9 @@ def killOtherInstances():
     Description:
     Allows only one instance to run at a time to avoid
     possible smbus bus contention.
+
+    Parameters: none
+    Returns: nothing
     """
     thisProc = os.path.basename(__file__)
 
@@ -195,13 +241,16 @@ def killOtherInstances():
 def getCLarguments():
     """
     Description:
-    Get command line arguments. There is one possible argument
-    Returns nothing.
+    Get the following command line arguments
 
     Usage: adcacq.py [-r sample rate] [-n number samples] [-d]
     -r  samples per second
     -n  number of samples to acquire per frame
+    -k  kill all running instances and exit
     -d  debug mode
+
+    Parameters: none
+    Returns: nothing
     """
     global debugMode, sampleSize, sampleRate, killAllInstances
 
@@ -231,12 +280,23 @@ def getCLarguments():
 ## end def
 
 def main():
+    """
+    Description:
+    Instaniates an ADC object and begins collecting samples from the ADC
+    and writing the samples to the output data file.
+
+    Parameters: none
+    Returns: nothing
+    """
     global adc1
 
+    # set the ADC to maximum sampling rate
     #tconfig = 0xC203;
     #tconfig = 0xC283;
     tconfig = 0xC2E3; # maximum sampling rate
 
+    # Register a callback function to cleanup after getting a CTL-C
+    # or kill signal.
     signal.signal(signal.SIGTERM, terminateProcess)
     signal.signal(signal.SIGINT, terminateProcess)
 
@@ -246,12 +306,14 @@ def main():
     # other instances prevents possible smbus contention.
     killOtherInstances()
 
+    # Create an instance of the ADC interface layer.
     import ads1115
     adc1 = ads1115.ads1115(config=tconfig, debug=False)
 
     if killAllInstances:
         terminateProcess(0,0)
 
+    # Begin collecting ADC samples indefinitely.
     while True:
         dSamples = {}
         lSamples = getSamples(sampleSize)

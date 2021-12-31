@@ -69,9 +69,9 @@ h4 {
 <div id="mainContainer">
 <h3>Push Button Monitor</h3>
 <div class="infoText">
-<p>Demonstrates web  GPIO control by monitoring the number
-of times a push button, connected to the Raspberry
-Pi GPIO, has been pressed. Also starts the push button
+<p>Demonstrates web GPIO monitoring by displaying the number
+of times a button connected to the
+Raspberry Pi GPIO has been pushed. Also starts the push button
 agent background process, if it is not running. The agent
 launches a callback function that updates the pushbutton
 count, stored in a file, each time the button gets pushed.
@@ -147,51 +147,36 @@ function main() {
     };
 
     /*
-       Get sensor data web service.  
-       Setup up polling intervals to get sensor data
-       from web service.
+       Get the push button count and timestamp of most recent push.  
+       Setup up polling intervals to get push button data
+       from the server.
     */
     getPushButtonData();
     setInterval(getPushButtonData, 500);
 }
 
 function getPushButtonData() {
+    // Send request to server for push button count data.
     httpRequest.open("POST", PUSH_BUTTON_DATA_URL, true);
     httpRequest.send();
 }
 
 function displayData(dataItem) {
-
-    displayTime(dataItem);
+    // Display push button count and status of agent process.
     pushbuttonCount.innerHTML = dataItem.count + " times";
+    date_t.innerHTML = dataItem.time.split(" ")[0];
+    time_t.innerHTML = dataItem.time.split(" ")[1];
     onlineStatus.innerHTML = "online";
     onlineStatus.style.color = "green";
 }
 
 function displayOfflineStatus() {
+    // Display status of agent process as offline.
     pushbuttonCount.innerHTML = "n/a";
-    date_t.innerHTML = "";
+    date_t.innerHTML = "n/a";
     time_t.innerHTML = "";
     onlineStatus.innerHTML = "offline";
     onlineStatus.style.color = "red";
-}
-
-function displayTime(dataItem) {
-    var date, time, hourminute;
-    var localDateObj, localTimeZone, timeZoneShift;
-    date = dataItem.time.split(" ")[0];
-    time = dataItem.time.split(" ")[1];
-    hourminute = time.split(":")[0] + ":" + time.split(":")[1];
-    localDateObj = new Date();
-    localTimeZone = localDateObj.getTimezoneOffset() / 60;
-    if (Math.sign(localTimeZone)) {
-        timeZoneShift = "-";
-    } else {
-        timeZoneShift = "+"
-    }
-    date_t.innerHTML = date;    
-    //time_t.innerHTML = hourminute;
-    time_t.innerHTML = time;
 }
 
 function startAgent() {

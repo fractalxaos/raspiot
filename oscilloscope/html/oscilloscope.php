@@ -24,25 +24,9 @@
  Note: the following line must be added to the /etc/sudoers
  file so that the www-data user can start this process.
  
-    www-data ALL=(ALL) NOPASSWD: /home/pi/bin/oscilloscope.py
+     www-data ALL=(ALL) NOPASSWD: /home/pi/bin/oscilloscope.py
  
- Copyright 2021 Jeff Owrey
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/license.
-
- Revision History
-   * v10 released 11 Nov 2021 by J L Owrey; first release
-*/
+ */
 
 # Define global constants
 

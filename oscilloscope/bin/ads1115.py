@@ -2,10 +2,9 @@
 #
 # Module: ads1115.py
 #
-# Description: This module acts as an interface between the ADS1115
-# analog to digital converter and downstream applications that use the
-# data.  This module acts as a library module that
-# can be imported into and called from other Python programs.
+# Description:
+# This module acts as an hardware abstraction layer providing an
+# interface between the ADS1115 device and higher level Python scripts.
 #
 # Copyright 2021 Jeff Owrey
 #    This program is free software: you can redistribute it and/or modify
@@ -22,10 +21,10 @@
 #    along with this program.  If not, see http://www.gnu.org/license.
 #
 # Revision History
-#   * v10 released 01 June 2021 by J L Owrey; first release
+#   * v10 released 12 Dec 2021 by J L Owrey; first release
 #
-#2345678901234567890123456789012345678901234567890123456789012345678901234567890
-
+#12345678901234567890123456789012345678901234567890123456789012345678901234567890
+ 
 import smbus
 import time
 
@@ -66,11 +65,19 @@ class ads1115:
                        config=_DEFAULT_CONFIG,
                        debug=False):
         """
-        Initialize the MPL3115 sensor at the supplied address (default
-        address is 0x60), and supplied bus (default is 1).  Creates
-        a new SMBus object for each instance of this class.  Writes
-        configuration data (two bytes) to the MPL3115 configuration
-        registers.
+        Description:
+        Initializes the MPL3115 sensor at the supplied address 
+        (default address is 0x60), and supplied bus (default is 1).
+        Creates a new SMBus object for each instance of this class
+        and writes configuration data (two bytes) to the MPL3115
+        configuration registers.
+ 
+        Parameters:
+            sAddr - bus address of the MPL3115 sensor
+            sbus - bus number of the bus which the MPL3115 connected
+            config - configuration of control register number one
+            debug - boolean value: True for debug mode, False otherwise
+        Returns: nothing
         """
 
         # Instantiate a smbus object.
@@ -123,7 +130,7 @@ class ads1115:
                      5 - AIN1
                      6 - AIN2
                      7 - AIN3
-        Returns: Nothing
+        Returns: nothing
         """
         assert isinstance(source, int) and source >= 0 and source <= 7, \
             'invalid input source'
@@ -148,9 +155,12 @@ class ads1115:
     def getVoltage(self):
         """
         Description:
-        Gets the voltage on the input of the ADS1115.  Calculates the
-        voltage based on the configuration of the programable gain
-        amplifier.
+        Gets the voltage on the input of the ADS1115.
+        Calculates the voltage based on the configuration of the
+        programable gain amplifier.
+        
+        Parameters: none
+        Returns: the level in Volts of the input to the ADC
         """
         lData = self.bus.read_i2c_block_data(self.sensorAddr,
                 _CONVERSION_REG, 2)
@@ -169,6 +179,16 @@ class ads1115:
     ### HELPER FUNCTIONS ###
 
 def printBytes(lData, sLabel):
+    """
+    Description:
+    Used for debugging purposes, prints bytes preceeded by a
+    descriptive label.
+
+    Parameters:
+        lData - list object containing bytes to print out
+        sLabel - discriptive label to print out along with the data
+    Returns: nothing
+    """
     nBytes = len(lData)
     tBytes = ()
     for i in range(nBytes):
