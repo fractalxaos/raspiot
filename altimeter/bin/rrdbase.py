@@ -34,17 +34,20 @@ class rrdbase:
 
     def __init__(self, rrdFile, chartsDirectory, chartWidth, \
                  chartHeight, verboseMode, debugMode):
-        """Initialize instance variables that remain constant throughout
-           the life of this object instance.  These items are set by the
-           calling module.
-           Parameters:
-             rrdFile - the path to the rrdtool database file
-             chartsDirectory - the path to the folder to contain charts
-             chartWidth - the width of charts in pixels
-             chartHeight - the height of charts  in pixels
-             verboseMode - verbose output
-             debugMode - full debug output
-           Returns: nothing
+        """
+        Description:
+        Initialize instance variables that remain constant throughout
+        the life of this object instance.  These items are set by the
+        calling module.
+
+        Parameters:
+            rrdFile - the path to the rrdtool database file
+            chartsDirectory - the path to the folder to contain charts
+            chartWidth - the width of charts in pixels
+            chartHeight - the height of charts  in pixels
+            verboseMode - verbose output
+            debugMode - full debug output
+        Returns: nothing
         """
         self.rrdFile = rrdFile
         self.chartsDirectory = chartsDirectory
@@ -55,20 +58,26 @@ class rrdbase:
     ## end def
 
     def getTimeStamp():
-        """Sets the error message time stamp to the local system time.
-           Parameters: none
-           Returns: string containing the time stamp
+        """
+        Description:
+        Sets the error message time stamp to the local system time.
+
+        Parameters: none
+        Returns: string containing the time stamp
         """
         return time.strftime('%m/%d/%Y %H:%M:%S', time.localtime())
     ## end def
 
     def getEpochSeconds(sTime):
-        """Converts the time stamp supplied in the weather data string
-           to seconds since 1/1/1970 00:00:00.
-           Parameters: 
-               sTime - the time stamp to be converted must be formatted
-                       as %m/%d/%Y %H:%M:%S
-           Returns: epoch seconds
+        """
+        Description:
+        Converts the time stamp supplied in the weather data string
+        to seconds since 1/1/1970 00:00:00.
+
+        Parameters: 
+            sTime - the time stamp to be converted must be formatted
+                    as %m/%d/%Y %H:%M:%S
+        Returns: epoch seconds
         """
         try:
             t_sTime = time.strptime(sTime, '%m/%d/%Y %H:%M:%S')
@@ -81,12 +90,15 @@ class rrdbase:
     ## end def
 
     def updateDatabase(self, tData):
-        """Updates the rrdtool round robin database with data supplied in
-           the weather data string.
-           Parameters:
-               tData - a tuple object containing the data items to be written
-                       to the rrdtool database
-           Returns: True if successful, False otherwise
+        """
+        Description:
+        Updates the rrdtool round robin database with data supplied in
+        the weather data string.
+
+        Parameters:
+            tData - a tuple object containing the data items to be written
+                    to the rrdtool database
+        Returns: True if successful, False otherwise
         """
         # Get the time stamp supplied with the data.  This must always be
         # the first element of the tuple argument passed to this function.
@@ -132,23 +144,26 @@ class rrdbase:
 
     def createAutoGraph(self, fileName, dataItem, gLabel, gTitle, gStart,
                         lower, upper, addTrend, autoScale):
-        """Uses rrdtool to create a graph of specified weather data item.
-           Graphs are for display in html documents.
-           Parameters:
-               fileName - name of graph file
-               dataItem - the weather data item to be graphed
-               gLabel - string containing a graph label for the data item
-               gTitle - string containing a title for the graph
-               gStart - time from now when graph starts
-               lower - lower bound for graph ordinate
-               upper - upper bound for graph ordinate
-               addTrend - 0, show only graph data
-                          1, show only a trend line
-                          2, show a trend line and the graph data
-               autoScale - if True, then use vertical axis auto scaling
-                   (lower and upper parameters are ignored), otherwise use
-                   lower and upper parameters to set vertical axis scale
-           Returns: True if successful, False otherwise
+        """
+        Description:
+        Uses rrdtool to create a graph of specified weather data item.
+        Graphs are for display in html documents.
+        Parameters:
+            fileName - name of graph file
+            dataItem - the weather data item to be graphed
+            gLabel - string containing a graph label for the data item
+            gTitle - string containing a title for the graph
+            gStart - time from now when graph starts
+            lower - lower bound for graph ordinate
+            upper - upper bound for graph ordinate
+            addTrend - 0, show only graph data
+                       1, show only a trend line
+                       2, show a trend line and the graph data
+            autoScale - if True, then use vertical axis auto scaling
+                        (lower and upper parameters are ignored), otherwise
+                        use lower and upper parameters to set vertical axis
+                        scale
+        Returns: True if successful, False otherwise
         """
         gPath = self.chartsDirectory + fileName + '.png'
 

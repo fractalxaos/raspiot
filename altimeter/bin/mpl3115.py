@@ -66,11 +66,20 @@ class  mpl3115:
                        sbus=_DEFAULT_BUS_NUMBER,
                        config=_DEFAULT_CONFIG,
                        debug=False):
-        # Initialize the MPL3115 sensor at the supplied address (default
-        # address is 0x60), and supplied bus (default is 1).  Creates
-        # a new SMBus object for each instance of this class.  Writes
-        # configuration data (two bytes) to the MPL3115 configuration
-        # registers.
+        """
+        Description: Initialize the MPL3115 sensor at the supplied
+        address (default address is 0x60), and supplied bus (default
+        is 1).  Creates a new SMBus object for each instance of this
+        class.  Writes configuration data (two bytes) to the MPL3115 
+        configuration registers.
+
+        Parameters:
+            sAddr - the serial bus address of the MCP4725 device
+            sbus  - the bus number of the bus to which the MCP4725 connected
+            config - one byte MCP4725 configuration
+            debug - boolean value: True for debug mode, False otherwise
+        Returns: nothing
+        """
 
         # Instantiate a smbus object.
         self.sensorAddr = sAddr
@@ -104,6 +113,12 @@ class  mpl3115:
     ## end def
 
     def getInfo(self):
+        """
+        Description: Gets status and configuration data from MCP4725.
+
+        Parameters: none
+        Returns: three bytes of data
+        """
         # Read manufacture identification data.
         mfcid = self.bus.read_byte_data(self.sensorAddr, _ID_REG)
         mfcidB1 = format(mfcid, "08b")
@@ -117,6 +132,13 @@ class  mpl3115:
     ## end def
 
     def pollForData(self):
+        """
+        Description: Waits for MCP4725 to signal that new data is ready
+        or until times out.
+
+        Parameters: none
+        Returns: nothing
+        """
         # Start a timer for smbus timeout.
         init_time = time.time() 
         # Poll sensor status for new data. It the timer times out, raise
@@ -136,6 +158,12 @@ class  mpl3115:
     ## end def   
 
     def getAltitude(self):
+        """
+        Description: Gets altitude from the MCP4725.
+
+        Parameters: none
+        Returns: altitude in meters
+        """
         # Write data to control register CTL_REG1 
         #               10111001 0xB9
         #   |      10        |  111   |      001    |
@@ -184,6 +212,13 @@ class  mpl3115:
     ## end def
 
     def getPressure(self, mode='P'):
+        """
+        Description: Gets pressure from the MCP4725.
+
+        Parameters:
+            mode - P for Pascals, B for inches of Mercury
+        Returns: pressure in Pascals or inches of Mercury
+        """
         # Write data to control register CTL_REG1 
         #               10111001 0x39
         #   |      00        |  111   |      001    |
@@ -223,12 +258,20 @@ class  mpl3115:
 
         if mode == 'B':
             return pressure / 3386.389
-        else:
+        elif mode == 'P':
             return pressure / 1000.0 # Convert to kilo pascals
+        else:
+            print("invalid pressure mode option")
     ## end def
 
     def getTemperature(self, mode='C'):
-        # Write data to control register CTL_REG1 
+        """
+        Description: Gets temperature from the MCP4725.
+
+        Parameters:
+            mode - F for Fahrenheit, C for Celcius
+        Returns: temperature in degrees Fahrenheit or Celcius
+        """        # Write data to control register CTL_REG1 
         #               10111001 0xB9
         #   |      10        |  111   |      001    |
         #   | altimeter mode | OSR128 | active mode |
@@ -271,22 +314,34 @@ class  mpl3115:
             # Convert Celsius to Fahrenheit
             tempFahr = tempCelsius * 1.8 + 32.0
             return tempFahr
-        else:
+        elif mode == 'C':
             return tempCelsius
+        else:
+            print("invalid temperature mode option")
     ## end def
 
     def setPressureOffset(self, offset=101.325, mode='P'):
+        """
+        Description: Sets the pressure offset to zero the altimeter.
+
+        Parameters:
+            offset - the pressure offset in either Pascals or inches Mercury
+            mode - B for inches Mercury, P for Pascals
+        Returns: nothing
+        """        
         if mode == 'B':
             # Convert inches mercury to Pascals.  The LSB of the
             # BAR_IN register equals 2.0 Pascals, so divide Pascals
             # by 2.
             pascalsDiv2 = int(round(offset * 3386.389 / 2.0))
-        else:
+        elif mode == 'P':
             # Convert kilo Pascals to Pascals.  The LSB of the
             # BAR_IN register equals 2.0 Pascals, so divide
             # Pascals by 2.
             pascalsDiv2 = int(round(offset * 1000.0 / 2.0))
-        
+        else:
+            print("invalid pressure mode option")
+
         # Store the result of Pascals divided by 2 in two bytes
         # of the BAR_IN register.
         data = [ (pascalsDiv2 & 0xFF00) >> 8 ] # MSB
@@ -303,6 +358,14 @@ class  mpl3115:
     ### HELPER FUNCTIONS ###
 
 def printBytes(lData, sLabel):
+    """
+    Description: Prints out data in binary format for debugging purposes.
+
+    Parameters:
+        lData - list of byte data to convert to binary
+        sLabel - discriptive label of printed bytes
+    Returns: nothing
+    """    
     nBytes = len(lData)
     tBytes = ()
     for i in range(nBytes):
@@ -315,6 +378,12 @@ def printBytes(lData, sLabel):
     ### TEST FUNCTIONS ###
 
 def test():
+    """
+    Description: Verifies MCP4725 class methods.
+
+    Parameters: none
+    Returns: nothing
+    """    
     # Initialize in debug mode the MPL3115 sensor.
     alt1 = mpl3115(0x60, 1, debug=True)
     # Calibrate for measureing altitude above ground level (AGL).
