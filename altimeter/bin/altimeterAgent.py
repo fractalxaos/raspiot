@@ -4,7 +4,7 @@
 #  
 # Module: mpl3115a2_agent.py
 #
-# Description: This module acts as an agent between the MPL3115 sensor and
+# Description: This module acts as an agent between the mpl3115a2 sensor and
 # the web services.  The agent
 #     - converts units of various sensor data items
 #     - updates a round robin (rrdtool) database with the sensor data
@@ -36,7 +36,7 @@
 #    along with this program.  If not, see http://www.gnu.org/license.
 #
 # Revision History
-#   * v10 - 12 Dec 2021 by J L Owrey; first release
+#   * v10 - 05 Nov 2018 by J L Owrey; first release
 
 import os
 import sys
@@ -114,25 +114,21 @@ rrdb = None
 
 def getTimeStamp():
     """
-    Description:
     Sets the error message time stamp to the local system time.
-
     Parameters: none
-    Returns: string containing the time stamp.
+    Returns string containing the time stamp.
     """
     return time.strftime('%m/%d/%Y %H:%M:%S', time.localtime())
 ##end def
 
 def getEpochSeconds(sTime):
     """
-    Description:
     Convert the time stamp supplied in the sensor data string
     to seconds since 1/1/1970 00:00:00.
-
     Parameters: 
        sTime - the time stamp to be converted must be formatted
                as %m/%d/%Y %H:%M:%S
-    Returns: epoch seconds.
+    Returns epoch seconds.
     """
     try:
         t_sTime = time.strptime(sTime, '%m/%d/%Y %H:%M:%S')
@@ -144,13 +140,11 @@ def getEpochSeconds(sTime):
 ##end def
 
 def setStatusToOffline():
-    """
-    Description: Set the detected status of the sensor to
-    "offline" and inform downstream clients by removing input
-    and output data files.
-
-    Parameters: none
-    Returns: nothing
+    """Set the detected status of the sensor to
+       "offline" and inform downstream clients by removing input
+       and output data files.
+       Parameters: none
+       Returns: nothing
     """
     global sensorOnline
 
@@ -165,15 +159,12 @@ def setStatusToOffline():
 ##end def
 
 def terminateAgentProcess(signal, frame):
-    """
-    Description: 
-    Send a message to log when the agent process gets killed
-    by the operating system.  Inform downstream clients
-    by removing input and output data files.
-
-    Parameters:
-        signal, frame - dummy parameters
-    Returns: nothing
+    """Send a message to log when the agent process gets killed
+       by the operating system.  Inform downstream clients
+       by removing input and output data files.
+       Parameters:
+           signal, frame - dummy parameters
+       Returns: nothing
     """
     print('%s terminating agent process' % getTimeStamp())
     # Inform downstream clients by removing output data file.
@@ -184,14 +175,6 @@ def terminateAgentProcess(signal, frame):
 
     ### PUBLIC FUNCTIONS ###
 def checkForAltimeterReset(altitudeSensor):
-    """
-    Description: 
-    Check to see if the user has clicked the Reset Altimeter
-    button on the web page.
-    Parameters:
-        altitudeSensor - MPL3115 class instance object
-    Returns: nothing
-    """
     if os.path.exists(_ALTIMETER_RESET_FILE):
         # Get current pressure in kPa.
         currentBar = altitudeSensor.getPressure(mode='B')
@@ -209,14 +192,13 @@ def checkForAltimeterReset(altitudeSensor):
 
 def getSensorData(objSensor, dData):
     """
-    Description:
-    Gets altitude, pressure, and temperature from the MPL3115A2
+    Get altitude, pressure, and temperature from the MPL3115A2
     sensor.
-
     Parameters:
         objSensor - altitude sensor instance object
         dData - a dictionary object to contain sensor data
-    Returns: True if successful, False otherwise
+    Returns:
+        True if successful, False otherwise
     """
     
     # Set date item to current date and time.
@@ -245,14 +227,12 @@ def getSensorData(objSensor, dData):
 
 def convertData(dData):
     """
-    Description:
     Convert individual sensor data items as necessary.  Also
     format data items for use by html documents.
-
     Parameters:
        dData - a dictionary object containing the data items to be
                converted
-    Returns: true if successful, false otherwise.
+    Returns true if successful, false otherwise.
     """
     global currentPressure
 
@@ -292,15 +272,22 @@ def convertData(dData):
 
 def writeOutputDataFile(dData):
     """
-    Description:
+    Writes to a file a formatted string containing the sensor data.
+    The file is written to the document dynamic data folder for use
+    by html documents.
+    Parameters: 
+        dData - dictionary object containing sensor data
+    Returns true if successful, false otherwise
+    """
+
+    """
     Write sensor data items to the output data file, formatted as 
     a Javascript file.  This file may then be requested and used by
     by downstream clients, for instance, an HTML document.
-
     Parameters:
         dData - a dictionary containing the data to be written
                    to the output data file
-    Returns: True if successful, False otherwise
+        Returns: True if successful, False otherwise
     """
     # Write a JSON formatted file for use by html clients.  The following
     # data items are sent to the client file.
@@ -333,16 +320,13 @@ def writeOutputDataFile(dData):
 ##end def
 
 def setStatus(updateSuccess):
-    """
-    Description:
-    Detect if device is offline or not available on
-    the network. After a set number of attempts to get data
-    from the device set a flag that the device is offline.
-
-    Parameters:
-        updateSuccess - a boolean that is True if data request
-                        successful, False otherwise
-    Returns: nothing
+    """Detect if device is offline or not available on
+       the network. After a set number of attempts to get data
+       from the device set a flag that the device is offline.
+       Parameters:
+           updateSuccess - a boolean that is True if data request
+                           successful, False otherwise
+       Returns: nothing
     """
     global failedUpdateCount, sensorOnline
 
@@ -368,12 +352,10 @@ def setStatus(updateSuccess):
 
 def generateDayGraphs():
     """
-    Description:
     Generate graphs for html documents. Calls createGraph for each graph
     that needs to be created.
-
     Parameters: none
-    Returns: nothing
+    Returns nothing.
     """
     rrdb.createAutoGraph('1d_altitude', 'altitude', 'meters', \
                          'Altitude', 'now-1d', 0, 0, 0, True)
@@ -394,14 +376,11 @@ def generateDayGraphs():
 
 def getCLarguments():
     """
-    Description:
-    Get command line arguments. Possible arguments
+    Get command line arguments. There is one possible argument
         -d turns on debug mode
         -v turns on verbose debug mode
         -p sets the sensor polling interval
-
-    Parameters: none
-    Returns: nothing
+    Returns nothing.
     """
     global debugMode, verboseMode, sensorPollingInterval
 
@@ -431,16 +410,13 @@ def getCLarguments():
 
 def setup():
     """
-    Description:
     Executive routine which manages timing and execution of all other
     events.
-
     Parameters: none
-    Returns: nothing
+    Returns nothing.
     """
     global currentPressure, rrdb, alt1
 
-    # Register callback function to handle CTL-C or kill signal events.
     signal.signal(signal.SIGTERM, terminateAgentProcess)
     signal.signal(signal.SIGINT, terminateAgentProcess)
 
@@ -494,8 +470,8 @@ def loop():
             # Check if user has clicked the Altitude Reset button.
             checkForAltimeterReset(alt1)
 
-            # Get MPL3115 sensor data.
             dData = {}
+
             result = getSensorData(alt1, dData)
 
             # If the sensor is online and the data successfully parsed, 
@@ -518,7 +494,6 @@ def loop():
                                               dData['altitude'],
                                               dData['bar'],
                                               dData['tempF']))
-            ## end if
             setStatus(result) 
 
         # At the day chart generation interval generate day charts.
