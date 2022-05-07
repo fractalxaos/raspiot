@@ -4,7 +4,7 @@ altimeter/docs/raspberrypi_altimeter_hookup.odt
 altimeter/versions/
 docs/breadboard_layout_raw.jpg
 docs/gpio_layout.png
-docs/project_layout.png
+#docs/project_layout.png
 docs/project_layout_vertical.JPG
 docs/setting_up_raspberry_pi_block_diagram.odg
 docs/setting_up_raspberry_pi_for_iot.odt

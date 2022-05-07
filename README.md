@@ -1,4 +1,7 @@
 # raspiot
+
+<img src="./docs/project_layout.png">
+
 <h2>Internet of Things Ideas for the Raspberry Pi</h2>
 
 <p>This repository contains six different projects demonstrating how to use web applications to control and monitor various devices connected to the Raspberry Pi.  Please read <a href="./docs/setting_up_raspberry_pi_for_iot.pdf"><i>Setting Up The Raspberry Pi for Internet of Things</i></a> hookup guide for details on how to procure parts, hookup hardware, and install the software.</p>
