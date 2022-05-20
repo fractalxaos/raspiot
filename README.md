@@ -12,7 +12,7 @@ details on each project and how to procure parts, hookup hardware, and install t
 <h3>Project Hookup Guides</h3>
 <ul>
 <li><a href="./led/docs/raspberrypi_led_hookup.pdf">LED</a></li>
-<li><a href="./pushbutton/docs/raspberrypi_pushbutton_hookup.pdf">Pushbutton</a></li>
+<li><a href="./pushbutton/docs/raspberrypi_pushbutton_hookup.pdf">Push Button</a></li>
 <li><a href="./servo/docs/raspberrypi_servo_hookup.pdf">Servo</a></li>
 <li><a href="./fncgen/docs/raspberrypi_fncgen_hookup.pdf">Function Generator</a></li>
 <li><a href="./oscilloscope/docs/raspberrypi_oscilloscope_hookup.pdf">
