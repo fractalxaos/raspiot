@@ -11,10 +11,10 @@ details on each project and how to procure parts, hookup hardware, and install t
 
 <h3>Project Hookup Guides</h3>
 <ul>
-<li>LED<a href="./led/docs/raspberrypi_led_hookup.pdf"></li>
-<li>Pushbutton<a href="./pushbutton/docs/raspberrypi_pushbutton_hookup.pdf"></li>
-<li>Servo<a href="./servo/docs/raspberrypi_servo_hookup.pdf"></li>
-<li>Function Generator<a href="./fncgen/docs/raspberrypi_fncgen_hookup.pdf"></li>
-<li>Oscilloscope<a href="./oscilloscope/docs/raspberrypi_oscilloscope_hookup.pdf"></li>
-<li>Altimeter<a href="./altimeter/docs/raspberrypi_altimeter_hookup.pdf"></li>
+<li>LED<a href="./led/docs/raspberrypi_led_hookup.pdf"></a></li>
+<li>Pushbutton<a href="./pushbutton/docs/raspberrypi_pushbutton_hookup.pdf"></a></li>
+<li>Servo<a href="./servo/docs/raspberrypi_servo_hookup.pdf"></a></li>
+<li>Function Generator<a href="./fncgen/docs/raspberrypi_fncgen_hookup.pdf"></a></li>
+<li>Oscilloscope<a href="./oscilloscope/docs/raspberrypi_oscilloscope_hookup.pdf"></a></li>
+<li>Altimeter<a href="./altimeter/docs/raspberrypi_altimeter_hookup.pdf"></a></li>
 </ul>
