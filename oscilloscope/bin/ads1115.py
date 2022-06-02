@@ -1,30 +1,32 @@
 #!/usr/bin/python3 -u
-#
-# Module: ads1115.py
-#
-# Description:
-# This module acts as an hardware abstraction layer providing an
-# interface between the ADS1115 device and higher level Python scripts.
-#
-# Copyright 2021 Jeff Owrey
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see http://www.gnu.org/license.
-#
-# Revision History
-#   * v10 released 12 Dec 2021 by J L Owrey; first release
-#
-#12345678901234567890123456789012345678901234567890123456789012345678901234567890
- 
+
+"""
+Module: ads1115.py
+
+Description:
+This module acts as an hardware abstraction layer providing an
+interface between the ADS1115 analog to digital (ADC) converter and
+higher level Python scripts.
+
+Copyright 2021 Jeff Owrey
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see http://www.gnu.org/license.
+
+Revision History
+  * v10 released 12 Dec 2021 by J L Owrey; first release
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+""" 
 import smbus
 import time
 
@@ -41,18 +43,17 @@ _HI_THRESH_REG = 0X03
 # Define timeout waiting for sensor output ready.
 _SENSOR_READ_TIMEOUT = 2.0
 
-# Define the default sensor configuration.  See the ADS1115 data sheet
-# for meaning of each bit.  The following bytes are written to the
-# configuration register
-#
-# byte 1 | OS  |       MUX       |       PGA       | MODE|
-#        | d15 | d14 | d13 | d12 | d11 | d10 |  d9 |  d8 |
-#        |  1  |  1  |  0  |  0  |  0  |  0  |  1  |  0  |
-#
-# byte 2 |        DR       | C_M | C_P | C_L | COMP_QUE  |
-#        |  d7 |  d6 |  d5 |  d4 |  d3 |  d2 |  d1 |  d0 | 
-#        |  1  |  0  |  0  |  0  |  0  |  0  |  1  |  1  |
-#
+"""
+Define the default sensor configuration.  See the ADS1115 data sheet
+for meaning of each bit.  The following bytes are written to the
+configuration register
+
+        bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
+     byte 1 | OS  |       MUX       |       PGA       | MODE|
+  (default) |  1  |  1     0     0  |  0     0     1  |  0  |
+     byte 2 |        DR       | C_M | C_P | C_L | COMP_QUE  |
+  (default) |  1     0     0  |  0  |  0  |  0  |  1     1  |
+"""
 _DEFAULT_CONFIG = 0xC283
 
 # Module scope global instance for testing purposes
@@ -66,15 +67,15 @@ class ads1115:
                        debug=False):
         """
         Description:
-        Initializes the MPL3115 sensor at the supplied address 
+        Initializes the ADS1115 sensor at the supplied address 
         (default address is 0x60), and supplied bus (default is 1).
         Creates a new SMBus object for each instance of this class
-        and writes configuration data (two bytes) to the MPL3115
+        and writes configuration data (two bytes) to the ADS1115
         configuration registers.
  
         Parameters:
-            sAddr - bus address of the MPL3115 sensor
-            sbus - bus number of the bus which the MPL3115 connected
+            sAddr - bus address of the ADS1115 sensor
+            sbus - bus number of the bus which the ADS1115 connected
             config - configuration of control register number one
             debug - boolean value: True for debug mode, False otherwise
         Returns: nothing
@@ -161,6 +162,13 @@ class ads1115:
         
         Parameters: none
         Returns: the level in Volts of the input to the ADC
+
+        The ADS1115 returns the digitized analog voltage in two bytes
+        in 2's complement format.
+
+            bit |   7 |   6 |   5 |   4 |   3 |   2 |   1 |   0 |
+         byte 1 | d15 | d14 | d13 | d12 | d11 | d10 |  d9 |  d8 |
+         byte 2 |  d7 |  d6 |  d5 |  d4 |  d3 |  d2 |  d1 |  d0 | 
         """
         lData = self.bus.read_i2c_block_data(self.sensorAddr,
                 _CONVERSION_REG, 2)

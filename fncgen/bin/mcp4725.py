@@ -1,34 +1,37 @@
 #!/usr/bin/python3 -u
-#
-# Module: mcp4725.py
-#
-# Description:
-# This module acts as an hardware abstraction layer providing an
-# interface between the MCP4725 device and higher level Python scripts.
-#
-# Copyright 2021 Jeff Owrey
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see http://www.gnu.org/license.
-#
-# Revision History
-#   * v10 released 12 Dec 2021 by J L Owrey; first release
-#
-#12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+"""
+Module: mcp4725.py
+
+Description:
+This module acts as an hardware abstraction layer providing an
+interface between the MCP4725 digital to analog converter (DAC)
+and higher level Python scripts.
+
+Copyright 2021 Jeff Owrey
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see http://www.gnu.org/license.
+
+Revision History
+  * v10 released 12 Dec 2021 by J L Owrey; first release
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+"""
  
 import smbus
 import time
 
-# Define default sm bus address.
+Define default sm bus address.
 DEFAULT_BUS_ADDRESS = 0x61
 DEFAULT_BUS_NUMBER = 1
 
@@ -77,18 +80,19 @@ class mcp4725:
         """
         assert 0 <= val <= 4095
 
-        # Write data to the DAC register - 2 bytes in fast mode.
-        #        -------------------------------------------------
-        #    bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
-        #        -------------------------------------------------
-        # byte 1 |  0  |  0  |  0  |  0  | d11 | d10 | d9  | d9  |
-        #        -------------------------------------------------
-        # byte 2 | d7  | d6  | d5  | d4  | d3  | d2  | d1  | d0  |
-        #        -------------------------------------------------
-        #
-        # d11-d0 bits set the value to convert to analog.  The value
-        # expressed as an unsigned integer between 0 and 4095.
-
+        """
+        Write data to the DAC register - 2 bytes in fast mode.
+               -------------------------------------------------
+           bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
+               -------------------------------------------------
+        byte 1 |  0  |  0  |  0  |  0  | d11 | d10 | d9  | d9  |
+               -------------------------------------------------
+        byte 2 | d7  | d6  | d5  | d4  | d3  | d2  | d1  | d0  |
+               -------------------------------------------------
+        
+        d11-d0 bits set the value to convert to analog.  The value
+        expressed as an unsigned integer between 0 and 4095.
+        """
         # Build bytes to send to device with updated value.
         bData = [_WRITE_FAST_MODE | (val >> 8)]
         bData.append(val & 0xFF)
@@ -147,19 +151,20 @@ class mcp4725:
         """
         assert 0 <= val <= 4095
 
-        # Write data to the DAC register - 3 bytes in normal mode.
-        #        -------------------------------------------------
-        #    bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
-        #        -------------------------------------------------
-        # byte 1 |  0  |  1  |  0  |  X  |  X  |  0  |  0  |  X  |
-        #        -------------------------------------------------
-        # byte 2 | d11 | d10 | d9  | d8  | d7  | d6  | d5  | d4  |
-        #        -------------------------------------------------
-        # byte 3 | d3  | d2  | d1  | d0  |  X  |  X  |  X  |  X  |
-        #        -------------------------------------------------
-        # d11-d0 bits get the value to convert to analog.  The value
-        # expressed as an unsigned integer between 0 and 4095.
-
+        """
+        Write data to the DAC register - 3 bytes in normal mode.
+               -------------------------------------------------
+           bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
+               -------------------------------------------------
+        byte 1 |  0  |  1  |  0  |  X  |  X  |  0  |  0  |  X  |
+               -------------------------------------------------
+        byte 2 | d11 | d10 | d9  | d8  | d7  | d6  | d5  | d4  |
+               -------------------------------------------------
+        byte 3 | d3  | d2  | d1  | d0  |  X  |  X  |  X  |  X  |
+               -------------------------------------------------
+        d11-d0 bits get the value to convert to analog.  The value
+        expressed as an unsigned integer between 0 and 4095.
+        """
         # Build bytes to send to device with updated value.
         bData = [_WRITE_DAC]
         bData.append(val >> 4)
@@ -185,20 +190,20 @@ class mcp4725:
 
         """
         assert 0 <= val <= 4095
-
-        # Write data to the DAC register - 3 bytes in write mode.
-        #        -------------------------------------------------
-        #    bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
-        #        -------------------------------------------------
-        # byte 1 |  0  |  1  |  1  |  X  |  X  |  0  |  0  |  X  |
-        #        -------------------------------------------------
-        # byte 2 | d11 | d10 | d9  | d8  | d7  | d6  | d5  | d4  |
-        #        -------------------------------------------------
-        # byte 3 | d3  | d2  | d1  | d0  |  X  |  X  |  X  |  X  |
-        #        -------------------------------------------------
-        # d11-d0 bits get the value to convert to analog.  The value
-        # expressed as an unsigned integer between 0 and 4095.
-
+        """
+        Write data to the DAC register - 3 bytes in write mode.
+               -------------------------------------------------
+           bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
+               -------------------------------------------------
+        byte 1 |  0  |  1  |  1  |  X  |  X  |  0  |  0  |  X  |
+               -------------------------------------------------
+        byte 2 | d11 | d10 | d9  | d8  | d7  | d6  | d5  | d4  |
+               -------------------------------------------------
+        byte 3 | d3  | d2  | d1  | d0  |  X  |  X  |  X  |  X  |
+               -------------------------------------------------
+        d11-d0 bits get the value to convert to analog.  The value
+        expressed as an unsigned integer between 0 and 4095.
+        """
         # Build bytes to send to device with updated value.
         val &= 0xFFF
         bData = [_WRITE_DAC_EEPROM]
@@ -221,26 +226,26 @@ class mcp4725:
         DAC value.
         Parameters: none
         Returns: the 12 bit value in the register
-        """
-        # Read data from the DAC register - 3 bytes in write mode.
-        #        -------------------------------------------------
-        #    bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
-        #        -------------------------------------------------
-        # byte 0 | RDY | POR |  X  |  X  |  X  | PD1 | PD2 |  X  |
-        #        -------------------------------------------------
-        # byte 1 | d11 | d10 | d9  | d8  | d7  | d6  | d5  | d4  |
-        #        -------------------------------------------------
-        # byte 2 | d3  | d2  | d1  | d0  |  X  |  X  |  X  |  X  |
-        #        -------------------------------------------------
-        # byte 3 |  X  | PD1 | PD2 |  X  | d11 | d10 | d9  | d8  |
-        #        -------------------------------------------------
-        # byte 4 | d7  | d6  | d5  | d4  | d3  | d2  | d1  | d0  |
-        #        -------------------------------------------------
-        # d11-d0 in bytes 1 and 2 contain the value in the DAC
-        # register, while bytes 3 and 4 contain the value in the
-        # EEPROM.  In both cases the value expressed as an unsigned
-        # integer between 0 and 4095.
 
+        Read data from the DAC register - 3 bytes in write mode.
+               -------------------------------------------------
+           bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
+               -------------------------------------------------
+        byte 0 | RDY | POR |  X  |  X  |  X  | PD1 | PD2 |  X  |
+               -------------------------------------------------
+        byte 1 | d11 | d10 | d9  | d8  | d7  | d6  | d5  | d4  |
+               -------------------------------------------------
+        byte 2 | d3  | d2  | d1  | d0  |  X  |  X  |  X  |  X  |
+               -------------------------------------------------
+        byte 3 |  X  | PD1 | PD2 |  X  | d11 | d10 | d9  | d8  |
+               -------------------------------------------------
+        byte 4 | d7  | d6  | d5  | d4  | d3  | d2  | d1  | d0  |
+               -------------------------------------------------
+        d11-d0 in bytes 1 and 2 contain the value in the DAC
+        register, while bytes 3 and 4 contain the value in the
+        EEPROM.  In both cases the value expressed as an unsigned
+        integer between 0 and 4095.
+        """
         # Read the DAC register and return the 12-bit DAC value.
         bData = self.bus.read_i2c_block_data(self.sensorAddr, _DAC_REG, 5)
  
