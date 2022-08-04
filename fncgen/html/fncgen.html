@@ -20,11 +20,6 @@ h2 {
     text-align: left;
     margin: auto;
 }
-div.closeIcon {
-  position: absolute;
-  top: 0px;
-  right: 0px;
-}
 #mainContainer {
     position: relative;
     width: 355px;
@@ -72,10 +67,6 @@ div.closeIcon {
 <body onload="init()" onunload="end()">
 
 <div id="mainContainer">
-
-<div class="closeIcon">
-<img id="closeTab" src="../static/closeIcon.png">
-</div>
 
 <h3>Function Generator</h3>
 <div class="infoText">
@@ -142,13 +133,25 @@ var btnStart = document.getElementById("btnStart");
 var runState = document.getElementById("runState");
 var debugMode = document.getElementById("debugMode");
 var debugFrame = document.getElementById("debugFrame");
+var termfncgenproc = false;
 
 // Close button event handler   
-document.getElementById("closeTab").onclick = function() {
-    runState.value = "off";
-    frmControl.submit();
-    setTimeout(function(){ window.close(); }, 600);
-}
+/*
+setInterval(function() {
+    if (termfncgenproc) {
+        termfncgenproc = false;
+        runState.value = "off";
+        frmControl.submit();
+    }
+}, 200);
+
+window.addEventListener('beforeunload', function (e) {
+    termfncgenproc = true;
+	e.preventDefault();
+	e.returnValue = '';
+});
+*/
+// Event handlers for function generator controls
 
 ampVal.innerHTML = ampSet.value;
 ampSet.oninput = function() {

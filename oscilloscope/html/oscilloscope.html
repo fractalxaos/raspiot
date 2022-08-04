@@ -39,11 +39,6 @@ select {
     text-align: left;
     margin: auto;
 }
-div.closeIcon {
-  position: absolute;
-  top: 0px;
-  right: 0px;
-}
 .footer {
     text-align: left;
     font: 12px Helvetica, sans-serif;
@@ -79,10 +74,6 @@ div.closeIcon {
 <body onload="main()">
 
 <div id="mainFrame">
-
-<div class="closeIcon">
-<img id="closeTab" src="../static/closeIcon.png">
-</div>
 
 <h2>Simple Oscilloscope</i></h2>
 <div class="infoText">
@@ -223,6 +214,23 @@ var triggerMode;
 
 var httpRequest = new XMLHttpRequest();
 
+// Close button event handler   
+/*
+var termfncgenproc = false;
+setInterval(function() {
+    if (termfncgenproc) {
+        termfncgenproc = false;
+        document.getElementById("acqState").value = "stop";
+        frmAdcacq.submit();
+    }
+}, 200);
+
+window.addEventListener('beforeunload', function (e) {
+    termfncgenproc = true;
+	e.preventDefault();
+	e.returnValue = '';
+});
+*/
 /* Main Routine */
 
 function main() {
@@ -243,12 +251,6 @@ function main() {
     btnStartStop.addEventListener("click", setRunState);
     btnSingleSweep.addEventListener("click", setSingleSweep);
     btnReset.addEventListener("click", resetScope);
-    // Close button event handler   
-    document.getElementById("closeTab").onclick = function() {
-        document.getElementById("acqState").value = "stop";
-        frmAdcacq.submit();
-        setTimeout(function(){ window.close(); }, 600);
-    }
     // Volts per division slider
     voltsDivSet.value = voltsDiv;
     voltsDivVal.innerHTML = voltsDiv.toFixed(1);
@@ -329,12 +331,10 @@ function setSingleSweep() {
      * Handle Single Step button events.  If simulation running in
      * continuous mode, stop the simulation.
      */
-    var speed;
-
     if (btnStartStop.value == "Stop") {
         btnStartStop.value = "Start";
         clearInterval(objInterval);
-    } 
+    }
     getADCdata();
 }
 
@@ -345,6 +345,7 @@ function setTriggerMode() {
 }
 
 function resetScope(shapeIndex) {
+    btnStartStop.value = "Start";
     document.getElementById("acqState").value = "stop";
     frmAdcacq.submit();
 }

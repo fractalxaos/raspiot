@@ -1,39 +1,39 @@
 #!/usr/bin/python3 -u
-"""
-Module: mpl3115.py
+#
+# Module: mpl3115.py
+#
+# Description: This module acts as an interface between the MPL3115A2
+# sensor and downstream applications that use the data.  Class methods get
+# pressure, altitude, and temperature data from the MPL3115 sensor.  This
+# module acts as a library module that can be imported into and called
+# from other Python programs.
+#
+# Notes:
+# 1. Five bytes must be read from the output registers: three bytes from
+#    OUT_P register and two bytes from OUT_T register.  Five bytes at a time
+#    must be read in order to flush these registers for the next data
+#    data acquisition.  Otherwise random data may be in the output
+#    register.
+#    
+# Copyright 2021 Jeff Owrey
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see http://www.gnu.org/license.
+#
+# Revision History
+#   * v10 released 01 June 2021 by J L Owrey; first release
+#
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
 
-Description: This module acts as an interface between the MPL3115A2
-altitude sensor and downstream applications that use the data.  Class
-methods get pressure, altitude, and temperature data from the MPL3115 
-sensor.  This module acts as a library module that can be imported into
-and called from other Python programs.
-
-Note:
-   Five bytes must be read from the output registers: three bytes from
-   OUT_P register and two bytes from OUT_T register.  Five bytes at a time
-   must be read in order to flush these registers for the next data
-   data acquisition.  Otherwise random data may be in the output
-   register.
-   
-Copyright 2021 Jeff Owrey
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see http://www.gnu.org/license.
-
-Revision History
-  * v10 released 01 June 2021 by J L Owrey; first release
-
-12345678901234567890123456789012345678901234567890123456789012345678901234567890
-"""
 import smbus
 import time
 
@@ -52,15 +52,12 @@ _CTRL_REG_1 = 0x26
 # Define timeout waiting for sensor output ready.
 _SENSOR_READ_TIMEOUT = 2.0
 
-"""
-Define the default sensor configuration.  See the MPL3115 data sheet
-for meaning of each bit.  The following bytes are written to the
-configuration register
-
-         bit |  7 |  6 |  5 |  4  |  3 |  2 |  1 |  0 |
-      byte 1 |ALT MODE |     OSR128    | STANDBY MODE |
-   (default) | 1  |  0 |  1 |  1  |  1 |  0 |  0 |  0 |  0xB8
-"""
+# Define the default sensor configuration.  See the MPL3115 data sheet
+# for meaning of each bit.  The following bytes are written to the
+# configuration register
+#               10111001 0xB8
+#   |      10        |  111   |      000     |
+#   | altimeter mode | OSR128 | standby mode |
 _DEFAULT_CONFIG = 0xB8
 
 class  mpl3115:
@@ -77,9 +74,9 @@ class  mpl3115:
         configuration registers.
 
         Parameters:
-            sAddr - the serial bus address of the MPL3115 device
-            sbus  - the bus number of the bus to which the MPL3115 connected
-            config - one byte MPL3115 configuration
+            sAddr - the serial bus address of the MCP4725 device
+            sbus  - the bus number of the bus to which the MCP4725 connected
+            config - one byte MCP4725 configuration
             debug - boolean value: True for debug mode, False otherwise
         Returns: nothing
         """
@@ -92,15 +89,15 @@ class  mpl3115:
 
         # Write configuration data to control register CTL_REG1.
         #               10111001 0xB8
-        #   | altimeter mode | OSR128 | standby mode |
         #   |      10        |  111   |      000     |
+        #   | altimeter mode | OSR128 | standby mode |
         self.bus.write_byte_data(self.sensorAddr,
                 _CTRL_REG_1, self.config & 0xFE)
 
         # Write data to data configuration register PT_DATA_CFG_REG.
         #		          00000111 0x07
-        #   |   X   | DREM | PDEFE | TDEFE |
         #   | 00000 |  1   |   1   |   1   |
+        #   |   X   | DREM | PDEFE | TDEFE |
         #
         #   X - don't care
         #   DREM - Data ready event mode for all events
@@ -117,7 +114,7 @@ class  mpl3115:
 
     def getInfo(self):
         """
-        Description: Gets status and configuration data from MPL3115.
+        Description: Gets status and configuration data from MCP4725.
 
         Parameters: none
         Returns: three bytes of data
@@ -136,7 +133,7 @@ class  mpl3115:
 
     def pollForData(self):
         """
-        Description: Waits for MPL3115 to signal that new data is ready
+        Description: Waits for MCP4725 to signal that new data is ready
         or until times out.
 
         Parameters: none
@@ -162,39 +159,38 @@ class  mpl3115:
 
     def getAltitude(self):
         """
-        Description: Gets altitude from the MPL3115.
+        Description: Gets altitude from the MCP4725.
 
         Parameters: none
         Returns: altitude in meters
         """
         # Write data to control register CTL_REG1 
         #               10111001 0xB9
-        #   | altimeter mode | OSR128 | active mode |
         #   |      10        |  111   |      001    |
+        #   | altimeter mode | OSR128 | active mode |
         self.bus.write_byte_data(self.sensorAddr,
                 _CTRL_REG_1, self.config | 0x1)
 
         # Poll data ready flag. Blocks further execution until
         # data ready or timeout.
         self.pollForData()
-
-        """        
-        Read data back from OUT_DATA_REG, 5 bytes returned:
-        altitude MSB, altitude CSB, altitude LSB, temperature
-        MSB and temperature LSB.
-               -------------------------------------------------
-           bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
-               -------------------------------------------------
-        byte 1 | d19 | d18 | d17 | d16 | d15 | d14 | d13 | d12 |
-               -------------------------------------------------
-        byte 2 | d11 | d10 | d9  | d8  | d7  |  d6 | d5  | d4  |
-               -------------------------------------------------
-        byte 3 | d3  | d2  | d1  | d0  |  0  |  0  |  0  |  0  |
-               -------------------------------------------------
-        The value is returned in Q16.4 format. The integer part
-        returned in d19-d4, a two's complement, 16 bit number.
-        The fractional part in d3-d0.        
-        """
+        
+        # Read data back from OUT_DATA_REG, 5 bytes returned:
+        # altitude MSB, altitude CSB, altitude LSB, temperature
+        # MSB and temperature LSB.
+        #        -------------------------------------------------
+        #    bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
+        #        -------------------------------------------------
+        # byte 1 | d19 | d18 | d17 | d16 | d15 | d14 | d13 | d12 |
+        #        -------------------------------------------------
+        # byte 2 | d11 | d10 | d9  | d8  | d7  |  d6 | d5  | d4  |
+        #        -------------------------------------------------
+        # byte 3 | d3  | d2  | d1  | d0  |  0  |  0  |  0  |  0  |
+        #        -------------------------------------------------
+        # The value is returned in Q16.4 format. The integer part
+        # returned in d19-d4, a two's complement, 16 bit number.
+        # The fractional part in d3-d0.        
+ 
         data = self.bus.read_i2c_block_data(self.sensorAddr,
                 _OUT_P_MSB_REG, 5)
 
@@ -217,7 +213,7 @@ class  mpl3115:
 
     def getPressure(self, mode='P'):
         """
-        Description: Gets pressure from the MPL3115.
+        Description: Gets pressure from the MCP4725.
 
         Parameters:
             mode - P for Pascals, B for inches of Mercury
@@ -225,32 +221,30 @@ class  mpl3115:
         """
         # Write data to control register CTL_REG1 
         #               10111001 0x39
-        #   | barometer mode | OSR128 | active mode |
         #   |      00        |  111   |      001    |
+        #   | barometer mode | OSR128 | active mode |
         self.bus.write_byte_data(self.sensorAddr,
                 _CTRL_REG_1, self.config & 0x3F | 0x1)
 
         # Poll data ready flag. Blocks further execution until
         # data ready or timeout.
         self.pollForData()
-
-        """
-        Read data back from OUT_DATA_REG, 5 bytes returned:
-        pressure MSB, pressure CSB, pressure LSB, temperature
-        MSB and temperature LSB.
-               -------------------------------------------------
-           bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
-               -------------------------------------------------
-        byte 1 | d19 | d18 | d17 | d16 | d15 | d14 | d13 | d12 |
-               -------------------------------------------------
-        byte 2 | d11 | d10 | d9  | d8  | d7  |  d6 | d5  | d4  |
-               -------------------------------------------------
-        byte 3 | d3  | d2  | d1  | d0  |  0  |  0  |  0  |  0  |
-               -------------------------------------------------
-        The value is returned in unsigned Q18.2 format. The
-        integer part returned in d19-d2 an unsignbed 18 bit number.
-        The fractional part in d1-d0.
-        """
+        
+        # Read data back from OUT_DATA_REG, 5 bytes returned:
+        # pressure MSB, pressure CSB, pressure LSB, temperature
+        # MSB and temperature LSB.
+        #        -------------------------------------------------
+        #    bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
+        #        -------------------------------------------------
+        # byte 1 | d19 | d18 | d17 | d16 | d15 | d14 | d13 | d12 |
+        #        -------------------------------------------------
+        # byte 2 | d11 | d10 | d9  | d8  | d7  |  d6 | d5  | d4  |
+        #        -------------------------------------------------
+        # byte 3 | d3  | d2  | d1  | d0  |  0  |  0  |  0  |  0  |
+        #        -------------------------------------------------
+        # The value is returned in unsigned Q18.2 format. The
+        # integer part returned in d19-d2 an unsignbed 18 bit number.
+        # The fractional part in d1-d0.        
         data = self.bus.read_i2c_block_data(self.sensorAddr,
                 _OUT_P_MSB_REG, 5)
 
@@ -272,7 +266,7 @@ class  mpl3115:
 
     def getTemperature(self, mode='C'):
         """
-        Description: Gets temperature from the MPL3115.
+        Description: Gets temperature from the MCP4725.
 
         Parameters:
             mode - F for Fahrenheit, C for Celcius
@@ -285,21 +279,19 @@ class  mpl3115:
         
         self.pollForData() # blocks execution until sensor data available
 
-        """  
-        Read data back from OUT_DATA_REG, 5 bytes returned:
-        altitude MSB, altitude CSB, altitude LSB, temperature
-        MSB and temperature LSB.
-               -------------------------------------------------
-           bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
-               -------------------------------------------------
-        byte 4 | d11 | d10 | d9  | d8  | d7  |  d6 | d5  | d4  |
-               -------------------------------------------------
-        byte 5 | d3  | d2  | d1  | d0  |  0  |  0  |  0  |  0  |
-               -------------------------------------------------
-        The value is returned in Q8.4 format. The integer part
-        returned in d11-d4, a two's complement, 8 bit number.
-        The fractional part in d3-d0.        
-        """
+        # Read data back from OUT_DATA_REG, 5 bytes returned:
+        # altitude MSB, altitude CSB, altitude LSB, temperature
+        # MSB and temperature LSB.
+        #        -------------------------------------------------
+        #    bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
+        #        -------------------------------------------------
+        # byte 4 | d11 | d10 | d9  | d8  | d7  |  d6 | d5  | d4  |
+        #        -------------------------------------------------
+        # byte 5 | d3  | d2  | d1  | d0  |  0  |  0  |  0  |  0  |
+        #        -------------------------------------------------
+        # The value is returned in Q8.4 format. The integer part
+        # returned in d11-d4, a two's complement, 8 bit number.
+        # The fractional part in d3-d0.        
         data = self.bus.read_i2c_block_data(self.sensorAddr, _OUT_P_MSB_REG, 5)
 
         
@@ -387,7 +379,7 @@ def printBytes(lData, sLabel):
 
 def test():
     """
-    Description: Verifies MPL3115 class methods.
+    Description: Verifies MCP4725 class methods.
 
     Parameters: none
     Returns: nothing
