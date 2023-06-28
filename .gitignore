@@ -5,6 +5,8 @@ docs/gpio_layout.png
 docs/project_layout_vertical.JPG
 docs/setting_up_raspberry_pi_block_diagram.odg
 docs/setting_up_raspberry_pi_for_iot.odt
+docs/setting_up_raspberry_pi_for_iot_local.odt
+docs/setting_up_raspberry_pi_for_iot_local.pdf
 docs/html/*
 
 led/docs/led_block_diagram.odg
