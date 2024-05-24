@@ -174,6 +174,7 @@ def terminateAgentProcess(signal, frame):
 ##end def
 
     ### PUBLIC FUNCTIONS ###
+
 def checkForAltimeterReset(altitudeSensor):
     if os.path.exists(_ALTIMETER_RESET_FILE):
         # Get current pressure in kPa.

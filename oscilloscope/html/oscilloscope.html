@@ -214,15 +214,6 @@ var triggerMode;
 
 var httpRequest = new XMLHttpRequest();
 
-// Close button event handler   
-/*
-
-window.addEventListener('beforeunload', function (e) {
-	e.preventDefault();
-	e.returnValue = '';
-});
-*/
-
 /* Main Routine */
 
 function main() {
@@ -249,7 +240,7 @@ function main() {
     voltsDivSet.oninput = function() {
         voltsDiv = parseFloat(this.value, 10);
         voltsDivVal.innerHTML = voltsDiv.toFixed(1);
-    }
+    };
     // Timebase seconds per division slider
     timebaseSet.max = TIMEBASE_SETTINGS.length - 1;
     timebaseSet.value = DEFAULT_TIMEBASE;
@@ -258,14 +249,14 @@ function main() {
         timebase = TIMEBASE_SETTINGS[parseInt(this.value)];
         timebaseVal.innerHTML = timebase;
         startAcquisition();
-    }
+    };
     // Trigger level volts slider
     triggerSet.value = trigger;
     triggerVal.innerHTML = trigger.toFixed(2);
     triggerSet.oninput = function() {
         trigger = parseFloat(this.value, 10);
         triggerVal.innerHTML = trigger.toFixed(2);
-    }
+    };
     // Trigger mode
     if(triggerMode == "auto") {
         btnAutoSweep.checked = true;
@@ -337,7 +328,7 @@ function setTriggerMode() {
 }
 
 function stopAcquisition() {
-    //btnStartStop.value = "Start";
+    /* Stops ADC data acquisition process and disables controls. */ 
     document.getElementById("acqState").value = "stop";
     frmAdcacq.submit();
     btnStopAcq.disabled = true;

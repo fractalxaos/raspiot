@@ -56,7 +56,7 @@ count = 0
 debounceTime = _DEFAULT_DEBOUNCE_TIME
 
 # turns on or off extensive debugging messages
-verboseMode = False
+debugMode = False
 
     ### INTERRUPT HANDLERS ###
 
@@ -129,7 +129,7 @@ def writeOutputFile():
         print("%s writeOutputFile: %s" % (getTimeStamp(), exError))
         return False
 
-    if verboseMode:
+    if debugMode:
         print(sData)
 
     # Write the JSON formatted data to the output data file.
@@ -148,20 +148,20 @@ def writeOutputFile():
 def getCLarguments():
     """
     Get command line arguments.  There are three possible arguments
-        -d turns on debug mode
-        -v turns on verbose mode
+        -d turns on verbose mode
         -b sets switch debounce time
     Returns: nothing
     """
-    global verboseMode, debounceTime
+    global debugMode, debounceTime
 
     index = 1
     while index < len(sys.argv):
-        if sys.argv[index] == '-v':
-            verboseMode = True
+        if sys.argv[index] == '-d':
+            debugMode = True
         elif sys.argv[index] == '-b':
             try:
-                debounceTime = abs(float(sys.argv[index + 1]))
+                debounceTime = int(sys.argv[index + 1])
+                assert (debounceTime > 0)
             except:
                 print("invalid debounce time")
                 exit(-1)

@@ -217,9 +217,12 @@ def getCLarguments():
     try:
         while index < len(sys.argv):
             if sys.argv[index] == '-a':
-                angle = float(sys.argv[index + 1])
-                assert angle >= 0 and angle <= 180, \
-                    'invalid angle'
+                try:
+                    angle = float(sys.argv[index + 1])
+                    assert (angle >= 0) and (angle <= 180)
+                except:
+                    print('invalid angle')
+                    exit(-1)
                 index += 1
             elif sys.argv[index] == '-c':
                 runContinuous = True
