@@ -31,6 +31,8 @@
 #
 # Revision History
 #   * v10 released 01 June 2021 by J L Owrey; first release
+#   * v1.1 issued 23 May 2024 by J L Owrey; make printBytes into a class
+#     method, improve setting control register, correct errors in comments
 #
 #2345678901234567890123456789012345678901234567890123456789012345678901234567890
 
@@ -41,13 +43,13 @@ import time
 _DEFAULT_BUS_ADDRESS = 0x60
 _DEFAULT_BUS_NUMBER = 1
 
-# Define device registers.
+# Define device register addresses.
 _STATUS_REG = 0x00
 _OUT_P_MSB_REG = 0x01
 _ID_REG = 0x0C
 _PT_DATA_CFG_REG = 0x13
 _BAR_IN_MSB_REG = 0x14
-_CTRL_REG_1 = 0x26
+_CONTROL_REG = 0x26
 
 # Define timeout waiting for sensor output ready.
 _SENSOR_READ_TIMEOUT = 2.0
@@ -74,9 +76,9 @@ class  mpl3115:
         configuration registers.
 
         Parameters:
-            sAddr - the serial bus address of the MCP4725 device
-            sbus  - the bus number of the bus to which the MCP4725 connected
-            config - one byte MCP4725 configuration
+            sAddr - the serial bus address of the MPL3115 device
+            sbus  - the bus number of the bus to which the MPL3115 connected
+            config - one byte MPL3115 configuration
             debug - boolean value: True for debug mode, False otherwise
         Returns: nothing
         """
@@ -87,12 +89,13 @@ class  mpl3115:
         self.config = config # control register 1 configuration
         self.debugMode = debug
 
-        # Write configuration data to control register CTL_REG1.
-        #               10111001 0xB8
+        # Write configuration data to control register _CONTROL_REG. Set
+        # MPL3115 to standby mode.
+        #               10111000 0xB8
         #   |      10        |  111   |      000     |
         #   | altimeter mode | OSR128 | standby mode |
-        self.bus.write_byte_data(self.sensorAddr,
-                _CTRL_REG_1, self.config & 0xFE)
+        config_reg = self.config & 0b11111110
+        self.bus.write_byte_data(self.sensorAddr, _CONTROL_REG, config_reg)
 
         # Write data to data configuration register PT_DATA_CFG_REG.
         #		          00000111 0x07
@@ -103,8 +106,7 @@ class  mpl3115:
         #   DREM - Data ready event mode for all events
         #   PDEFE - Pressure/Altitude data ready event flag
         #   TDEFE - Temperature data ready event flag
-        self.bus.write_byte_data(self.sensorAddr,
-                _PT_DATA_CFG_REG, 0x07)
+        self.bus.write_byte_data(self.sensorAddr, _PT_DATA_CFG_REG, 0x07)
 
         if self.debugMode:
             data = self.getInfo()
@@ -114,7 +116,7 @@ class  mpl3115:
 
     def getInfo(self):
         """
-        Description: Gets status and configuration data from MCP4725.
+        Description: Gets status and configuration data from MPL3115.
 
         Parameters: none
         Returns: three bytes of data
@@ -122,18 +124,18 @@ class  mpl3115:
         # Read manufacture identification data.
         mfcid = self.bus.read_byte_data(self.sensorAddr, _ID_REG)
         mfcidB1 = format(mfcid, "08b")
+        # Read status data.
+        status = self.bus.read_byte_data(self.sensorAddr, _STATUS_REG)
+        statusB1 = format(status, "08b")
         # Read configuration data.
-        config = self.bus.read_byte_data(self.sensorAddr, _STATUS_REG)
-        configB1 = format(config, "08b")
-        # Read configuration data.
-        control = self.bus.read_byte_data(self.sensorAddr, _CTRL_REG_1)
+        control = self.bus.read_byte_data(self.sensorAddr, _CONTROL_REG)
         controlB1 = format(control, "08b")
-        return (mfcidB1, configB1, controlB1)
+        return (mfcidB1, statusB1, controlB1)
     ## end def
 
     def pollForData(self):
         """
-        Description: Waits for MCP4725 to signal that new data is ready
+        Description: Waits for MPL3115 to signal that new data is ready
         or until times out.
 
         Parameters: none
@@ -145,12 +147,12 @@ class  mpl3115:
         # a smbus time out exception.
         while time.time() - init_time < _SENSOR_READ_TIMEOUT:
             data = self.bus.read_byte_data(self.sensorAddr, _STATUS_REG)
-            dataReady = data & 0x08 # bit 4 high indicates data ready
+            dataReady = data & 0b00001000 # bit 4 high indicates data ready
             if dataReady != 0:
                 if self.debugMode:
                     print('sensor read time: %f sec' % \
                          (time.time() - init_time))
-                time.sleep(0.1)
+                time.sleep(0.05)
                 return
             time.sleep(0.1)
         raise Exception('smbus timeout')
@@ -159,17 +161,18 @@ class  mpl3115:
 
     def getAltitude(self):
         """
-        Description: Gets altitude from the MCP4725.
+        Description: Gets altitude from the MPL3115.
 
         Parameters: none
         Returns: altitude in meters
         """
-        # Write data to control register CTL_REG1 
+        # Set configuration register MPL3115 to active mode.
         #               10111001 0xB9
         #   |      10        |  111   |      001    |
         #   | altimeter mode | OSR128 | active mode |
-        self.bus.write_byte_data(self.sensorAddr,
-                _CTRL_REG_1, self.config | 0x1)
+        config_reg = self.config | 0b10000001
+        # Write configuration data to control register _CONTROL_REG.
+        self.bus.write_byte_data(self.sensorAddr, _CONTROL_REG, config_reg)
 
         # Poll data ready flag. Blocks further execution until
         # data ready or timeout.
@@ -191,40 +194,36 @@ class  mpl3115:
         # returned in d19-d4, a two's complement, 16 bit number.
         # The fractional part in d3-d0.        
  
-        data = self.bus.read_i2c_block_data(self.sensorAddr,
-                _OUT_P_MSB_REG, 5)
+        data = self.bus.read_i2c_block_data(self.sensorAddr, _OUT_P_MSB_REG, 5)
 
         if self.debugMode:
-            printBytes(data, 'altitude register')
+            self.printBytes(data, 'altitude register')
     
         # Convert the data to 20 bit signed number Q16.4
-        # 0.0625 meter per LSB
         binary_val = ((data[0] << 16 | data[1] << 8 | data[2]) >> 4)
-        #altitude = binary_val *  0.0625
-        # Convert to signed floating point number
-        #if altitude > (1 << 15):
-        #    altitude -= (1 << 16)
         if binary_val > 0x7FFFF:
-            #binary_val -= 0x100000
             binary_val -= 0xFFFFF
+
+        # Convert binary altitude to decimal.  LSB equals 0.0625 meters.
         altitude = binary_val *  0.0625
         return altitude
     ## end def
 
     def getPressure(self, mode='P'):
         """
-        Description: Gets pressure from the MCP4725.
+        Description: Gets pressure from the MPL3115.
 
         Parameters:
             mode - P for Pascals, B for inches of Mercury
         Returns: pressure in Pascals or inches of Mercury
         """
-        # Write data to control register CTL_REG1 
-        #               10111001 0x39
+        # Set MPL3115 to active mode.
+        #               00111001 0x39
         #   |      00        |  111   |      001    |
         #   | barometer mode | OSR128 | active mode |
-        self.bus.write_byte_data(self.sensorAddr,
-                _CTRL_REG_1, self.config & 0x3F | 0x1)
+        config_reg = (self.config & 0b00111110) | 0b00000001
+        # Write configuration data to control register _CONTROL_REG.
+        self.bus.write_byte_data(self.sensorAddr, _CONTROL_REG, config_reg)
 
         # Poll data ready flag. Blocks further execution until
         # data ready or timeout.
@@ -245,37 +244,41 @@ class  mpl3115:
         # The value is returned in unsigned Q18.2 format. The
         # integer part returned in d19-d2 an unsignbed 18 bit number.
         # The fractional part in d1-d0.        
-        data = self.bus.read_i2c_block_data(self.sensorAddr,
-                _OUT_P_MSB_REG, 5)
+        data = self.bus.read_i2c_block_data(self.sensorAddr, _OUT_P_MSB_REG, 5)
 
         if self.debugMode:
-            printBytes(data, 'pressure register')
+            self.printBytes(data, 'pressure register')
 
-        # Convert the data to 20-bits unsigned number Q18.2 format
-        # 0.25 Pascals per LSB
+        # Convert the data to 20-bits unsigned number Q18.2 format.
         binary_val = ((data[0] << 16 | data[1] << 8 | data[2]) >> 4)
+
+        # Convert binary pressure to decimal.  LSB equals 0.25 Pascals.
         pressure = binary_val * 0.25
 
         if mode == 'B':
-            return pressure / 3386.389
+            return pressure / 3386.389 # convert to inches Hg
         elif mode == 'P':
-            return pressure / 1000.0 # Convert to kilo pascals
+            return pressure / 1000.0 # convert to kilo pascals
         else:
             print("invalid pressure mode option")
     ## end def
 
     def getTemperature(self, mode='C'):
         """
-        Description: Gets temperature from the MCP4725.
+        Description: Gets temperature from the MPL3115.
 
         Parameters:
             mode - F for Fahrenheit, C for Celcius
         Returns: temperature in degrees Fahrenheit or Celcius
-        """        # Write data to control register CTL_REG1 
+        """
+
+        # Set MPL3115 to active mode.
         #               10111001 0xB9
-        #   |      10        |  111   |      001    |
-        #   | altimeter mode | OSR128 | active mode |
-        self.bus.write_byte_data(self.sensorAddr, _CTRL_REG_1, self.config | 0x1)
+        #   |      xx        |  111   |      001    |
+        #   |  sensor mode   | OSR128 | active mode |
+        config_reg = self.config | 0b00000001
+        # Write configuration data to control register _CONTROL_REG.
+        self.bus.write_byte_data(self.sensorAddr, _CONTROL_REG, config_reg)
         
         self.pollForData() # blocks execution until sensor data available
 
@@ -296,22 +299,18 @@ class  mpl3115:
 
         
         if self.debugMode:
-            printBytes(data, 'temperature register')
+            self.printBytes(data, 'temperature register')
 
         # Convert the data to a 12 bit signed number Q12.4
-        # 0.0625 degrees Celsius per LSB
         binary_val = ((data[3] << 8 | data[4]) >> 4)
-        #tempCelsius = binary_val * 0.0625
-        # Convert to signed floating point number
-        #if tempCelsius > (1 << 11):
-        #    tempCelsius -= (1 << 12)
         if binary_val > 0x7FF:
-            #binary_val -= 0x1000 
             binary_val -= 0xFFF 
+
+        # Convert binary temperature to decimal.  LSB equals 0.0625 degress C.
         tempCelsius = binary_val * 0.0625
 
         if mode == 'F':
-            # Convert Celsius to Fahrenheit
+            # Convert Celsius to Fahrenheit.
             tempFahr = tempCelsius * 1.8 + 32.0
             return tempFahr
         elif mode == 'C':
@@ -348,38 +347,36 @@ class  mpl3115:
         data += [ pascalsDiv2 & 0xFF ] # LSB
 
         if self.debugMode:
-            printBytes(data, 'pressure offset register')
+            self.printBytes(data, 'pressure offset register')
 
         self.bus.write_i2c_block_data(self.sensorAddr,
                 _BAR_IN_MSB_REG, data)
     ## end def
+
+    def printBytes(self, lData, sLabel):
+        """
+        Description: Prints out data in binary format for debugging purposes.
+
+        Parameters:
+            lData - list of byte data to convert to binary
+            sLabel - discriptive label of printed bytes
+        Returns: nothing
+        """    
+        nBytes = len(lData)
+        tBytes = ()
+        for i in range(nBytes):
+            tBytes += (format(lData[i], '08b')),
+        sFmt = '%s:' % sLabel
+        sFmt += nBytes * ' %s'
+        print(sFmt % tBytes)
+    ## end def
 ## end class
-
-    ### HELPER FUNCTIONS ###
-
-def printBytes(lData, sLabel):
-    """
-    Description: Prints out data in binary format for debugging purposes.
-
-    Parameters:
-        lData - list of byte data to convert to binary
-        sLabel - discriptive label of printed bytes
-    Returns: nothing
-    """    
-    nBytes = len(lData)
-    tBytes = ()
-    for i in range(nBytes):
-        tBytes += (format(lData[i], '08b')),
-    sFmt = '%s:' % sLabel
-    sFmt += nBytes * ' %s'
-    print(sFmt % tBytes)
-## end def
 
     ### TEST FUNCTIONS ###
 
 def test():
     """
-    Description: Verifies MCP4725 class methods.
+    Description: Verifies MPL3115 class methods.
 
     Parameters: none
     Returns: nothing
@@ -394,7 +391,7 @@ def test():
         print("%6.2f m" % alt1.getAltitude())
  
         print("%6.2f kP" % alt1.getPressure())
-        print("%6.2f \"Hg" % alt1.getPressure(mode='B'))
+        print("%6.2f inHg" % alt1.getPressure(mode='B'))
 
         print("%6.2f degC" % alt1.getTemperature())
         print("%6.2f degF\n" % alt1.getTemperature(mode='F'))

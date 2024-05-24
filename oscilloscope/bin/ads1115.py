@@ -22,6 +22,7 @@
 #
 # Revision History
 #   * v10 released 12 Dec 2021 by J L Owrey; first release
+#   * v11 issued 23 May 2024 by J L Owrey; improved write configuration data
 #
 #12345678901234567890123456789012345678901234567890123456789012345678901234567890
  
@@ -66,15 +67,15 @@ class ads1115:
                        debug=False):
         """
         Description:
-        Initializes the MPL3115 sensor at the supplied address 
+        Initializes the ADS1115 sensor at the supplied address 
         (default address is 0x60), and supplied bus (default is 1).
         Creates a new SMBus object for each instance of this class
-        and writes configuration data (two bytes) to the MPL3115
+        and writes configuration data (two bytes) to the ADS1115
         configuration registers.
  
         Parameters:
-            sAddr - bus address of the MPL3115 sensor
-            sbus - bus number of the bus which the MPL3115 connected
+            sAddr - bus address of the ADS1115 sensor
+            sbus - bus number of the bus which the ADS1115 connected
             config - configuration of control register number one
             debug - boolean value: True for debug mode, False otherwise
         Returns: nothing
@@ -104,8 +105,8 @@ class ads1115:
 
         # Write configuration data to configuration register _CONFIG_REG.
         # Break up configuration data into bytes.
-        lData = [config >> 8]
-        lData += [config & 0xFF]
+        lData = [config >> 8] # byte 1
+        lData.append(config & 0xFF) # byte 2
  
         if self.debugMode:
             print('PGA_val: %d' % PGA_val)
@@ -141,8 +142,8 @@ class ads1115:
         self.config = (config & 0x8FFF) | (source << 12) 
 
         # Break up configuration data into bytes.
-        lData = [self.config >> 8]
-        lData += [self.config & 0xFF]
+        lData = [self.config >> 8] # byte 1
+        lData.append(self.config & 0xFF) # byte 2
 
         if self.debugMode:
             print('setting input source: %d' % source)
@@ -172,6 +173,9 @@ class ads1115:
         
         if val > 0x7FFF:
             val -= 0xFFFF
+
+        # Convert binary voltage to decimal. LSB conversion factor determined
+        # by configuration of programable gain amplifier.
         return val * self.volts_lsb
     ## end def
 ## end class

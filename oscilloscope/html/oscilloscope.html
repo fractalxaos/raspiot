@@ -92,7 +92,7 @@ Your browser does not support HTML5 canvas.</canvas>
   &nbsp;&nbsp;
   <input type="button" id="btnSingleSweep" value="Single Sweep">
   &nbsp;&nbsp;
-  <input type="button" id="btnReset" value="Reset">
+  <input type="button" id="btnStopAcq" value="Stop Acq">
   <br>
 
   <div class="controlFrame">
@@ -171,7 +171,7 @@ var canvas = document.getElementById("mainCanvas");
 var context = canvas.getContext("2d");
 var btnStartStop = document.getElementById("btnStartStop");
 var btnSingleSweep = document.getElementById("btnSingleSweep");
-var btnReset = document.getElementById("btnReset");
+var btnStopAcq = document.getElementById("btnStopAcq");
 var mainFrame = document.getElementById("mainFrame");
 var voltsDivSet = document.getElementById("voltsDivSet");
 var voltsDivVal = document.getElementById("voltsDivVal");
@@ -216,21 +216,13 @@ var httpRequest = new XMLHttpRequest();
 
 // Close button event handler   
 /*
-var termfncgenproc = false;
-setInterval(function() {
-    if (termfncgenproc) {
-        termfncgenproc = false;
-        document.getElementById("acqState").value = "stop";
-        frmAdcacq.submit();
-    }
-}, 200);
 
 window.addEventListener('beforeunload', function (e) {
-    termfncgenproc = true;
 	e.preventDefault();
 	e.returnValue = '';
 });
 */
+
 /* Main Routine */
 
 function main() {
@@ -250,7 +242,7 @@ function main() {
     // Button click event handlers
     btnStartStop.addEventListener("click", setRunState);
     btnSingleSweep.addEventListener("click", setSingleSweep);
-    btnReset.addEventListener("click", resetScope);
+    btnStopAcq.addEventListener("click", stopAcquisition);
     // Volts per division slider
     voltsDivSet.value = voltsDiv;
     voltsDivVal.innerHTML = voltsDiv.toFixed(1);
@@ -344,10 +336,18 @@ function setTriggerMode() {
                ).value;
 }
 
-function resetScope(shapeIndex) {
-    btnStartStop.value = "Start";
+function stopAcquisition() {
+    //btnStartStop.value = "Start";
     document.getElementById("acqState").value = "stop";
     frmAdcacq.submit();
+    btnStopAcq.disabled = true;
+    btnStartStop.disabled = true;
+    btnSingleSweep.disabled = true;
+    voltsDivSet.disabled = true;
+    timebaseSet.disabled = true;
+    triggerSet.disabled = true;
+    btnAutoSweep.disabled = true;
+    btnTriggeredSweep.disabled = true;
 }
 
 /* Helper functions */
