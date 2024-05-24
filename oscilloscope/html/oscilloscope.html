@@ -92,7 +92,7 @@ Your browser does not support HTML5 canvas.</canvas>
   &nbsp;&nbsp;
   <input type="button" id="btnSingleSweep" value="Single Sweep">
   &nbsp;&nbsp;
-  <input type="button" id="btnStopAcq" value="Stop Acq">
+  <input type="button" id="btnAcq" value="Stop Acq">
   <br>
 
   <div class="controlFrame">
@@ -135,7 +135,7 @@ Your browser does not support HTML5 canvas.</canvas>
   target="debugFrame" style="display: hidden;">
   <input type="hidden" id="sampleRate" name="sampleRate" value="1000"/>
   <input type="hidden" id="sampleSize" name="sampleSize" value="200"/>
-  <input type="hidden" id="acqState" name="acqState" value="run"/>
+  <input type="hidden" id="acqState" name="acqState" value="stop"/>
   <input type="hidden" id="debugMode" name="debugMode" value="none"/>
 </form>
 <iframe id="debugFrame" name="debugFrame"></iframe>
@@ -171,7 +171,7 @@ var canvas = document.getElementById("mainCanvas");
 var context = canvas.getContext("2d");
 var btnStartStop = document.getElementById("btnStartStop");
 var btnSingleSweep = document.getElementById("btnSingleSweep");
-var btnStopAcq = document.getElementById("btnStopAcq");
+var btnAcq = document.getElementById("btnAcq");
 var mainFrame = document.getElementById("mainFrame");
 var voltsDivSet = document.getElementById("voltsDivSet");
 var voltsDivVal = document.getElementById("voltsDivVal");
@@ -185,6 +185,7 @@ var sampleRate = document.getElementById("sampleRate");
 var sampleSize = document.getElementById("sampleSize");
 var errorStatus = document.getElementById("errorStatus");
 var debugFrame = document.getElementById("debugFrame");
+var acqState = document.getElementById("acqState");
 
 /* Global Constants */
 
@@ -233,7 +234,7 @@ function main() {
     // Button click event handlers
     btnStartStop.addEventListener("click", setRunState);
     btnSingleSweep.addEventListener("click", setSingleSweep);
-    btnStopAcq.addEventListener("click", stopAcquisition);
+    btnAcq.addEventListener("click", setAcquisition);
     // Volts per division slider
     voltsDivSet.value = voltsDiv;
     voltsDivVal.innerHTML = voltsDiv.toFixed(1);
@@ -285,7 +286,7 @@ function main() {
      * Initialize and display gradicule.
      */
     initializeGradicule();
-    startAcquisition();
+    setAcquisition();
 } /* end main */
 
 /* Event Handler Functions */
@@ -327,36 +328,44 @@ function setTriggerMode() {
                ).value;
 }
 
-function stopAcquisition() {
-    /* Stops ADC data acquisition process and disables controls. */ 
-    document.getElementById("acqState").value = "stop";
-    frmAdcacq.submit();
-    btnStopAcq.disabled = true;
-    btnStartStop.disabled = true;
-    btnSingleSweep.disabled = true;
-    voltsDivSet.disabled = true;
-    timebaseSet.disabled = true;
-    triggerSet.disabled = true;
-    btnAutoSweep.disabled = true;
-    btnTriggeredSweep.disabled = true;
+function setAcquisition() {
+
+    if (acqState.value == "stop") {
+        /* Starts ADC data acquisition process and enables controls. */ 
+        acqState.value = "run";
+        sampleRate.value = String(parseInt(SAMPLES_DIV / timebase));
+        sampleSize.value = String( SAMPLES_DIV * 20 );
+        frmAdcacq.submit();
+        btnAcq.value = "Stop Acq";
+        document.getElementById("debugMode").value = _DEBUG_MODE;
+        if(_DEBUG_MODE == "true") {
+            debugFrame.height = "60";
+        } else {
+            debugFrame.height = "0";
+        }
+        enableControls(true)
+    } else {
+        /* Stops ADC data acquisition process and disables controls. */ 
+        acqState.value = "stop";
+        frmAdcacq.submit();
+        btnAcq.value = "Start Acq";
+        btnStartStop.value = "Stop";
+        setRunState();
+        enableControls(false)
+    }
 }
 
 /* Helper functions */
 
-function startAcquisition() {
-    /* Starts ADC data acquisition process */ 
-    document.getElementById("acqState").value = "run";
-    sampleRate.value = String(parseInt(SAMPLES_DIV / timebase));
-    sampleSize.value = String( SAMPLES_DIV * 20 );
-
-    document.getElementById("debugMode").value = _DEBUG_MODE;
-    if(_DEBUG_MODE == "true") {
-        debugFrame.height = "60";
-    } else {
-        debugFrame.height = "0";
-    }
-
-    frmAdcacq.submit();
+function enableControls(blnState) {
+    blnState = !blnState
+    btnStartStop.disabled = blnState;
+    btnSingleSweep.disabled = blnState;
+    voltsDivSet.disabled = blnState;
+    timebaseSet.disabled = blnState;
+    triggerSet.disabled = blnState;
+    btnAutoSweep.disabled = blnState;
+    btnTriggeredSweep.disabled = blnState;
 }
 
 function getADCdata() {
