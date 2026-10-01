@@ -4,7 +4,8 @@
 #
 # Description:
 # This module acts as an hardware abstraction layer providing an
-# interface between the MCP4725 device and higher level Python scripts.
+# interface between the MCP4725 digital to analog converter, and higher level
+# Python scripts.
 #
 # Copyright 2021 Jeff Owrey
 #    This program is free software: you can redistribute it and/or modify
@@ -22,7 +23,6 @@
 #
 # Revision History
 #   * v10 released 12 Dec 2021 by J L Owrey; first release
-#   * v11 issued 23 May 2024 by J L Owrey; improved DAC write handling
 #
 #12345678901234567890123456789012345678901234567890123456789012345678901234567890
  
@@ -36,8 +36,16 @@ DEFAULT_BUS_NUMBER = 1
 # Define device registers.
 _DAC_REG = 0x00
 
+# Define write modes.
+_WRITE_FAST_MODE = 0b00000000
+_WRITE_DAC = 0b01000000
+_WRITE_DAC_EEPROM = 0b01100000
+
 # Set time out for eeprom write cycle to complete.
 _EEPROM_POLL_WRITE_STATUS_TIMEOUT = 0.2
+
+# Instance of this class for testing.
+dac1 = None
 
 class mcp4725:
 
@@ -83,8 +91,8 @@ class mcp4725:
         # expressed as an unsigned integer between 0 and 4095.
 
         # Build bytes to send to device with updated value.
-        bData = [ (val >> 8) & 0b00001111 ] # byte 1
-        bData.append(val & 0xFF)  # byte 2
+        bData = [_WRITE_FAST_MODE | (val >> 8)]
+        bData.append(val & 0xFF)
         # The mcp4517 does not have a register offset pointer.  Therefore
         # the offset byte should be the first byte of the write command
         # string. The remain bytes are sent as the data block.
@@ -154,9 +162,9 @@ class mcp4725:
         # expressed as an unsigned integer between 0 and 4095.
 
         # Build bytes to send to device with updated value.
-        bData = [0b01000000] # byte 1
-        bData.append(val >> 4) # byte 2
-        bData.append((val << 4) & 0b11110000) # byte 3
+        bData = [_WRITE_DAC]
+        bData.append(val >> 4)
+        bData.append((val << 4) & 0xF0)
         self.bus.write_i2c_block_data(self.sensorAddr, bData[0], bData[1:])
 
         if self.debugMode:
@@ -194,9 +202,9 @@ class mcp4725:
 
         # Build bytes to send to device with updated value.
         val &= 0xFFF
-        bData = [0b01100000] # byte 1
-        bData.append(val >> 4) # byte 2
-        bData.append((val << 4) & 0b11110000)  # byte 3
+        bData = [_WRITE_DAC_EEPROM]
+        bData.append(val >> 4)
+        bData.append((val << 4) & 0xF0)
         self.bus.write_i2c_block_data(self.sensorAddr, bData[0], bData[1:])
         self.poll_eeprom_write_status()
 
@@ -297,64 +305,65 @@ class mcp4725:
             time.sleep(0.01)
         raise Exception("poll eeprom write status: timeout")
     ## end def
+
 ## end class
 
      ### TEST FUNCTIONS ###
 
-def write_read_register(aDac):
+def write_read_register():
     """
     Description: Verfies that values can be successfully written to
     the DAC register.
     Parameters: none
     Returns: nothing
     """
-    aDac.write_fast(4011)
-    dac_val = aDac.read_dac()
+    dac1.write_fast(4011)
+    dac_val = dac1.read_dac()
     print('dac read: %d\n' % dac_val)
 
-    aDac.write_dac(2511)
-    dac_val = aDac.read_dac()
+    dac1.write_dac(2511)
+    dac_val = dac1.read_dac()
     print('dac read: %d\n' % dac_val)
 
-    aDac.write_eeprom(2933)
-    eeprom_val = aDac.read_eeprom()
+    dac1.write_eeprom(2933)
+    eeprom_val = dac1.read_eeprom()
     print('eeprom val: %d\n' % eeprom_val)
 
-    aDac.write_dac(0) 
-    dac_val = aDac.read_dac()
+    dac1.write_dac(0) 
+    dac_val = dac1.read_dac()
     print('dac read: %d\n' % dac_val)
 
-    aDac.write_eeprom(0)
-    eeprom_val = aDac.read_eeprom()
+    dac1.write_eeprom(0)
+    eeprom_val = dac1.read_eeprom()
     print('eeprom val: %d' % eeprom_val)
 # end def
 
-def write_fast(aDac):
+def write_fast():
     """
     Description: Verfies fast write mode at maximum sample rate.
     Parameters: none
     Returns: nothing
     """
-    aDac.debugMode = False
+    dac1.debugMode = False
     nSamples = 1000
     stepSize = int(4000 / nSamples)
     while True:
         time_init = time.time()
         for i in range(0, 4000, stepSize):
-            aDac.write_fast(i)
+            dac1.write_fast(i)
         time_elapsed = time.time() - time_init
         tSample = time_elapsed / nSamples
         print('tSample: %f.6' % tSample)
 ## end def
 
-def write_block(aDac):
+def write_block():
     """
     Description: Verfies that blocks of data can be successfully
     written to the DAC register.
     Parameters: none
     Returns: nothing
     """
-    aDac.debugMode = False
+    dac1.debugMode = False
     nSamples = 1000
     dy = 4095.0 / float(nSamples)
     waveform = []
@@ -362,33 +371,33 @@ def write_block(aDac):
         waveform.append(round(i * dy))
     while True:
         time_init = time.time()
-        aDac.write_block(waveform)
+        dac1.write_block(waveform)
         period = time.time() - time_init
         tSample = period / nSamples
         print('period: %.10f  tSample: %.10f\n' % (period, tSample))
 ## end def
 
-def set_voltage(aDac, volts):
+def set_voltage(volts):
     """
     Description: Verfies that the DAC can output a specific voltage.
     Parameters: none
     Returns: nothing
     """
     bVal = round((volts / 3.25) * 4096)
-    aDac.write_fast(bVal)
+    dac1.write_fast(bVal)
 ## end def
 
 if __name__ == '__main__':
     dac1=mcp4725(debug=True)
 
     try:
-        #set_voltage(dac1, 1.5)
-        write_read_register(dac1)
-        write_fast(dac1)
-        #write_block(dac1)
+        #set_voltage(1.5)
+        write_read_register()
+        #write_fast()
+        #write_block()
     except KeyboardInterrupt:
-        set_voltage(dac1, 0)
-        dac_val = read_dac(dac1)
+        dac1.write_fast(0)
+        dac_val = dac1.read_dac()
         print('\ndac read: %d\n' % dac_val)
         exit(0)
 

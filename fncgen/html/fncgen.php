@@ -10,6 +10,7 @@
     font: normal 12px arial, sans-serif;
     text-align: left;
     margin: auto;
+    border: 1px solid black;
 }
 </style>
 </head>
@@ -44,6 +45,7 @@ $debugMode = $_POST["debugMode"];
 if($debugMode == "true") {
     # Create an HTML element to display debug data.
     echo "<div class=\"debugInfo\">";
+    echo "<h3>Debug Mode</h3>";
 }
 
 # Set function generator state based on user input from web page.
@@ -54,18 +56,24 @@ if($runState == "off") {
     # Start up the function generator with the parameters submitted
     # by the web page.
     $cmd = sprintf(
-        "sudo -u pi -S /home/pi/bin/fncgen.py -w %s -f %s -a %s -d %s",
+        "nohup sudo -u pi -S /home/pi/bin/fncgen.py -w %s -f %s -a %s -d %s",
         $waveform, $frequency, $amplitude, $dutyCycle
         );
 }
 
-# Run the command in the background.
-$PID=shell_exec("nohup $cmd > /dev/null 2>&1 & echo $!");
+doCmd($cmd. " > /dev/null 2>&1 & echo $!");
 
-if($debugMode == "true") {
-    echo "cmd: " . $cmd . "<br>";
-    echo "pid: " . $PID . "<br>";
-    echo "</div>";
+# Run the command in the background.
+function doCmd($cmd) {
+    global $debugMode;
+    exec("$cmd", $output, $retval);
+    if($debugMode) {
+        echo "cmd: " . $cmd . "<br>";
+        echo "result: " . $retval . "  ";
+        print_r($output); echo "<br>";
+        echo "</div>";
+    }
+    return $output;
 }
 ?>
 </body>

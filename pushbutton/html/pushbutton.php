@@ -17,7 +17,7 @@
 # Define global constants
 
 # debug mode
-define("_DEBUG", false);
+define("_DEBUG", true);
 
 # Get process id of push button agent process.  If the process is
 # not running, no process id will be returned and $processId will

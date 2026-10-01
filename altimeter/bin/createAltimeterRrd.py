@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python3 -u
 ## The -u option turns off block buffering of python output. This assures
 ## that error messages get printed to the log file as they happen.
 #  
@@ -32,9 +32,14 @@ def createRrdDatabase(fPath, dbUpateInterval=10, dbSizeDays=366):
     # same name, in the same location.  Require an existing database
     # to be manually deleted before creating a new database.
     if os.path.exists(fPath):
-        print "rrdtool altimeter database already exists!"
-        #return False
-
+        print("rrdtool altimeter database already exists!")
+        user_input = input('Create a new database (yes/no): ')
+        if user_input.lower() == 'no':
+          return False
+        elif user_input.lower() == 'yes':
+          backup_database(fPath)
+        else:
+          return False
     # Calculate the database size
     heartBeat = 2 * dbUpateInterval
     rrdNumRows = int(dbSizeDays * round(86400 / dbUpateInterval))
@@ -48,22 +53,32 @@ def createRrdDatabase(fPath, dbUpateInterval=10, dbSizeDays=366):
     strCmd = strFmt % (fPath, dbUpateInterval, \
                  heartBeat, heartBeat, heartBeat, rrdNumRows)
     
-    print "creating rrdtool database...\n\n%s\n" % strCmd # DEBUG
+    print("creating rrdtool database...\n\n%s\n" % strCmd) # DEBUG
 
     # Run the formatted command in a subprocess.
     try:
         subprocess.check_output(strCmd, stderr=subprocess.STDOUT, \
                                 shell=True)
-    except subprocess.CalledProcessError, exError:
-        print "rrdtool create failed: %s" % (exError.output)
+    except subprocess.CalledProcessError as exError:
+        print("rrdtool create failed: %s" % exError.output)
         return False
     else:
-        print 'database creation successful\n'
+        print('database creation successful\n')
     return True
+## end def
+
+def backup_database( path ):
+      dPath, file_name = os.path.split(path)
+      name, ext = os.path.splitext(file_name)
+      bak_file = name + '_bak' + ext
+      bak_path = dPath + '/' + bak_file
+      print('saving existing database as %s\n' % bak_path)
+      shutil.copy(path, bak_path)
 ## end def
 
 if __name__ == '__main__':
     import os
+    import shutil
     _USER = os.environ['USER']
     _RRD_FILE = '/home/%s/database/altimeterData.rrd' % _USER
     _DATABASE_UPDATE_INTERVAL = 30

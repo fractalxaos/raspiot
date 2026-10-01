@@ -236,16 +236,16 @@ def outputWaveform(waveformData, frequency):
     maxPtr = numSamples - 1
     # Set the waveform array pointer to the first element in the array.
     ptr = 0 
+    # Initialize elapsed time counter initial value.
+    periodBeginTime = time.time()
     # Initialize the previous DAC write time.
     previousWriteTime = time.time()
-    # Initialize elapsed time counter initial value.
-    init_time = time.time()
     while True:
-        currentTime = time.time()
+        timeNow = time.time()
         # Samples are sent to the DAC at sampleRate equal to hardcoded
         # _SAMPLE_RATE constant.
-        if (currentTime - previousWriteTime) >= tSample:
-            previousWriteTime = currentTime
+        if (timeNow - previousWriteTime) >= tSample:
+            previousWriteTime = timeNow
             
             if ptr > maxPtr:
                 # The complete waveform for one cycle has been sent to
@@ -253,17 +253,17 @@ def outputWaveform(waveformData, frequency):
                 # the beginning of the waveform array.
                 ptr = 0
                 if verboseMode:
-                    t_period = time.time() - init_time
+                    t_period = timeNow - periodBeginTime
                     t_sample = t_period / numSamples
                     print('period: %.6f  rate: %.8f' % (t_period, t_sample))
-                    init_time = currentTime
+                    periodBeginTime = timeNow
             ## end if
 
             dac1.write_fast(waveformData[ptr])
             ptr += 1
 
-            elapsedTime = time.time() - currentTime
-            remainingTime = tSample - elapsedTime - .001
+            elapsedTime = time.time() - timeNow
+            remainingTime = tSample - elapsedTime - 0.001
             if remainingTime > 0.0:
                 time.sleep(remainingTime)
         ## end if

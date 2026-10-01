@@ -2,7 +2,7 @@
 #
 # Module: mpl3115.py
 #
-# Description: This module acts as an interface between the MPL3115A2
+# Description: This module acts as an interface between the MPL3115A2 altimeter
 # sensor and downstream applications that use the data.  Class methods get
 # pressure, altitude, and temperature data from the MPL3115 sensor.  This
 # module acts as a library module that can be imported into and called
@@ -31,8 +31,6 @@
 #
 # Revision History
 #   * v10 released 01 June 2021 by J L Owrey; first release
-#   * v1.1 issued 23 May 2024 by J L Owrey; make printBytes into a class
-#     method, improve setting control register, correct errors in comments
 #
 #2345678901234567890123456789012345678901234567890123456789012345678901234567890
 
@@ -43,13 +41,13 @@ import time
 _DEFAULT_BUS_ADDRESS = 0x60
 _DEFAULT_BUS_NUMBER = 1
 
-# Define device register addresses.
+# Define device registers.
 _STATUS_REG = 0x00
 _OUT_P_MSB_REG = 0x01
 _ID_REG = 0x0C
 _PT_DATA_CFG_REG = 0x13
 _BAR_IN_MSB_REG = 0x14
-_CONTROL_REG = 0x26
+_CTRL_REG_1 = 0x26
 
 # Define timeout waiting for sensor output ready.
 _SENSOR_READ_TIMEOUT = 2.0
@@ -89,13 +87,12 @@ class  mpl3115:
         self.config = config # control register 1 configuration
         self.debugMode = debug
 
-        # Write configuration data to control register _CONTROL_REG. Set
-        # MPL3115 to standby mode.
-        #               10111000 0xB8
+        # Write configuration data to control register CTL_REG1.
+        #               10111001 0xB8
         #   |      10        |  111   |      000     |
         #   | altimeter mode | OSR128 | standby mode |
-        config_reg = self.config & 0b11111110
-        self.bus.write_byte_data(self.sensorAddr, _CONTROL_REG, config_reg)
+        self.bus.write_byte_data(self.sensorAddr,
+                _CTRL_REG_1, self.config & 0xFE)
 
         # Write data to data configuration register PT_DATA_CFG_REG.
         #		          00000111 0x07
@@ -106,7 +103,8 @@ class  mpl3115:
         #   DREM - Data ready event mode for all events
         #   PDEFE - Pressure/Altitude data ready event flag
         #   TDEFE - Temperature data ready event flag
-        self.bus.write_byte_data(self.sensorAddr, _PT_DATA_CFG_REG, 0x07)
+        self.bus.write_byte_data(self.sensorAddr,
+                _PT_DATA_CFG_REG, 0x07)
 
         if self.debugMode:
             data = self.getInfo()
@@ -124,13 +122,13 @@ class  mpl3115:
         # Read manufacture identification data.
         mfcid = self.bus.read_byte_data(self.sensorAddr, _ID_REG)
         mfcidB1 = format(mfcid, "08b")
-        # Read status data.
-        status = self.bus.read_byte_data(self.sensorAddr, _STATUS_REG)
-        statusB1 = format(status, "08b")
         # Read configuration data.
-        control = self.bus.read_byte_data(self.sensorAddr, _CONTROL_REG)
+        config = self.bus.read_byte_data(self.sensorAddr, _STATUS_REG)
+        configB1 = format(config, "08b")
+        # Read configuration data.
+        control = self.bus.read_byte_data(self.sensorAddr, _CTRL_REG_1)
         controlB1 = format(control, "08b")
-        return (mfcidB1, statusB1, controlB1)
+        return (mfcidB1, configB1, controlB1)
     ## end def
 
     def pollForData(self):
@@ -147,12 +145,12 @@ class  mpl3115:
         # a smbus time out exception.
         while time.time() - init_time < _SENSOR_READ_TIMEOUT:
             data = self.bus.read_byte_data(self.sensorAddr, _STATUS_REG)
-            dataReady = data & 0b00001000 # bit 4 high indicates data ready
+            dataReady = data & 0x08 # bit 4 high indicates data ready
             if dataReady != 0:
                 if self.debugMode:
                     print('sensor read time: %f sec' % \
                          (time.time() - init_time))
-                time.sleep(0.05)
+                time.sleep(0.1)
                 return
             time.sleep(0.1)
         raise Exception('smbus timeout')
@@ -166,13 +164,12 @@ class  mpl3115:
         Parameters: none
         Returns: altitude in meters
         """
-        # Set configuration register MPL3115 to active mode.
+        # Write data to control register CTL_REG1 
         #               10111001 0xB9
         #   |      10        |  111   |      001    |
         #   | altimeter mode | OSR128 | active mode |
-        config_reg = self.config | 0b10000001
-        # Write configuration data to control register _CONTROL_REG.
-        self.bus.write_byte_data(self.sensorAddr, _CONTROL_REG, config_reg)
+        self.bus.write_byte_data(self.sensorAddr,
+                _CTRL_REG_1, self.config | 0x1)
 
         # Poll data ready flag. Blocks further execution until
         # data ready or timeout.
@@ -194,17 +191,22 @@ class  mpl3115:
         # returned in d19-d4, a two's complement, 16 bit number.
         # The fractional part in d3-d0.        
  
-        data = self.bus.read_i2c_block_data(self.sensorAddr, _OUT_P_MSB_REG, 5)
+        data = self.bus.read_i2c_block_data(self.sensorAddr,
+                _OUT_P_MSB_REG, 5)
 
         if self.debugMode:
-            self.printBytes(data, 'altitude register')
+            printBytes(data, 'altitude register')
     
         # Convert the data to 20 bit signed number Q16.4
+        # 0.0625 meter per LSB
         binary_val = ((data[0] << 16 | data[1] << 8 | data[2]) >> 4)
+        #altitude = binary_val *  0.0625
+        # Convert to signed floating point number
+        #if altitude > (1 << 15):
+        #    altitude -= (1 << 16)
         if binary_val > 0x7FFFF:
+            #binary_val -= 0x100000
             binary_val -= 0xFFFFF
-
-        # Convert binary altitude to decimal.  LSB equals 0.0625 meters.
         altitude = binary_val *  0.0625
         return altitude
     ## end def
@@ -217,13 +219,12 @@ class  mpl3115:
             mode - P for Pascals, B for inches of Mercury
         Returns: pressure in Pascals or inches of Mercury
         """
-        # Set MPL3115 to active mode.
-        #               00111001 0x39
+        # Write data to control register CTL_REG1 
+        #               10111001 0x39
         #   |      00        |  111   |      001    |
         #   | barometer mode | OSR128 | active mode |
-        config_reg = (self.config & 0b00111110) | 0b00000001
-        # Write configuration data to control register _CONTROL_REG.
-        self.bus.write_byte_data(self.sensorAddr, _CONTROL_REG, config_reg)
+        self.bus.write_byte_data(self.sensorAddr,
+                _CTRL_REG_1, self.config & 0x3F | 0x1)
 
         # Poll data ready flag. Blocks further execution until
         # data ready or timeout.
@@ -244,21 +245,21 @@ class  mpl3115:
         # The value is returned in unsigned Q18.2 format. The
         # integer part returned in d19-d2 an unsignbed 18 bit number.
         # The fractional part in d1-d0.        
-        data = self.bus.read_i2c_block_data(self.sensorAddr, _OUT_P_MSB_REG, 5)
+        data = self.bus.read_i2c_block_data(self.sensorAddr,
+                _OUT_P_MSB_REG, 5)
 
         if self.debugMode:
-            self.printBytes(data, 'pressure register')
+            printBytes(data, 'pressure register')
 
-        # Convert the data to 20-bits unsigned number Q18.2 format.
+        # Convert the data to 20-bits unsigned number Q18.2 format
+        # 0.25 Pascals per LSB
         binary_val = ((data[0] << 16 | data[1] << 8 | data[2]) >> 4)
-
-        # Convert binary pressure to decimal.  LSB equals 0.25 Pascals.
         pressure = binary_val * 0.25
 
         if mode == 'B':
-            return pressure / 3386.389 # convert to inches Hg
+            return pressure / 3386.389
         elif mode == 'P':
-            return pressure / 1000.0 # convert to kilo pascals
+            return pressure / 1000.0 # Convert to kilo pascals
         else:
             print("invalid pressure mode option")
     ## end def
@@ -270,15 +271,11 @@ class  mpl3115:
         Parameters:
             mode - F for Fahrenheit, C for Celcius
         Returns: temperature in degrees Fahrenheit or Celcius
-        """
-
-        # Set MPL3115 to active mode.
+        """        # Write data to control register CTL_REG1 
         #               10111001 0xB9
-        #   |      xx        |  111   |      001    |
-        #   |  sensor mode   | OSR128 | active mode |
-        config_reg = self.config | 0b00000001
-        # Write configuration data to control register _CONTROL_REG.
-        self.bus.write_byte_data(self.sensorAddr, _CONTROL_REG, config_reg)
+        #   |      10        |  111   |      001    |
+        #   | altimeter mode | OSR128 | active mode |
+        self.bus.write_byte_data(self.sensorAddr, _CTRL_REG_1, self.config | 0x1)
         
         self.pollForData() # blocks execution until sensor data available
 
@@ -299,18 +296,22 @@ class  mpl3115:
 
         
         if self.debugMode:
-            self.printBytes(data, 'temperature register')
+            printBytes(data, 'temperature register')
 
         # Convert the data to a 12 bit signed number Q12.4
+        # 0.0625 degrees Celsius per LSB
         binary_val = ((data[3] << 8 | data[4]) >> 4)
+        #tempCelsius = binary_val * 0.0625
+        # Convert to signed floating point number
+        #if tempCelsius > (1 << 11):
+        #    tempCelsius -= (1 << 12)
         if binary_val > 0x7FF:
+            #binary_val -= 0x1000 
             binary_val -= 0xFFF 
-
-        # Convert binary temperature to decimal.  LSB equals 0.0625 degress C.
         tempCelsius = binary_val * 0.0625
 
         if mode == 'F':
-            # Convert Celsius to Fahrenheit.
+            # Convert Celsius to Fahrenheit
             tempFahr = tempCelsius * 1.8 + 32.0
             return tempFahr
         elif mode == 'C':
@@ -347,30 +348,32 @@ class  mpl3115:
         data += [ pascalsDiv2 & 0xFF ] # LSB
 
         if self.debugMode:
-            self.printBytes(data, 'pressure offset register')
+            printBytes(data, 'pressure offset register')
 
         self.bus.write_i2c_block_data(self.sensorAddr,
                 _BAR_IN_MSB_REG, data)
     ## end def
-
-    def printBytes(self, lData, sLabel):
-        """
-        Description: Prints out data in binary format for debugging purposes.
-
-        Parameters:
-            lData - list of byte data to convert to binary
-            sLabel - discriptive label of printed bytes
-        Returns: nothing
-        """    
-        nBytes = len(lData)
-        tBytes = ()
-        for i in range(nBytes):
-            tBytes += (format(lData[i], '08b')),
-        sFmt = '%s:' % sLabel
-        sFmt += nBytes * ' %s'
-        print(sFmt % tBytes)
-    ## end def
 ## end class
+
+    ### HELPER FUNCTIONS ###
+
+def printBytes(lData, sLabel):
+    """
+    Description: Prints out data in binary format for debugging purposes.
+
+    Parameters:
+        lData - list of byte data to convert to binary
+        sLabel - discriptive label of printed bytes
+    Returns: nothing
+    """    
+    nBytes = len(lData)
+    tBytes = ()
+    for i in range(nBytes):
+        tBytes += (format(lData[i], '08b')),
+    sFmt = '%s:' % sLabel
+    sFmt += nBytes * ' %s'
+    print(sFmt % tBytes)
+## end def
 
     ### TEST FUNCTIONS ###
 
@@ -391,7 +394,7 @@ def test():
         print("%6.2f m" % alt1.getAltitude())
  
         print("%6.2f kP" % alt1.getPressure())
-        print("%6.2f inHg" % alt1.getPressure(mode='B'))
+        print("%6.2f \"Hg" % alt1.getPressure(mode='B'))
 
         print("%6.2f degC" % alt1.getTemperature())
         print("%6.2f degF\n" % alt1.getTemperature(mode='F'))

@@ -37,6 +37,7 @@ $debugMode = $_POST["debugMode"];
 
 if($debugMode == "true") {
     echo "<div class=\"debugInfo\">";
+    echo "<h3>Debug Mode</h3>";
 }
 
 if($acqState == "run") {

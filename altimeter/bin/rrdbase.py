@@ -181,7 +181,7 @@ class rrdbase:
         strCmd += '-Y '
 
         # Set the chart ordinate label and chart title. 
-        strCmd += '-v %s -t %s ' % (gLabel, gTitle)
+        strCmd += '-v \'%s\' -t \'%s\' ' % (gLabel, gTitle)
 
         # Show the data, or a moving average trend line, or both.
         strCmd += 'DEF:dSeries=%s:%s:AVERAGE ' % (self.rrdFile, dataItem)

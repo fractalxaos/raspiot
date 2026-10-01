@@ -73,24 +73,24 @@ function continuousMotion($continuous) {
         # Stop running servo in continuous mode.
         $cmd = "sudo -u pi -S /home/pi/bin/servo.py -k";
     }
-    doCmd($cmd);
+    doCmd($cmd. " > /dev/null 2>&1 & echo $!");
 }
 
 function setAngle($angle) {
     # Set angle of servo arm.
     $cmd = sprintf(
-         "sudo -u pi -S /home/pi/bin/servo.py -a %s",
-          $angle);
-    doCmd($cmd);
+         "sudo -u pi -S /home/pi/bin/servo.py -a %s", $angle);
+    doCmd($cmd. " > /dev/null 2>&1 & echo $!");
 }
 
 function doCmd($cmd) {
-    # Run the command in the background.
-    $PID=shell_exec("$cmd > /dev/null 2>&1 & echo $!");
-    if(DEBUG == "true") {
+    exec("$cmd", $output, $retval);
+    if(DEBUG) {
         echo "cmd: " . $cmd . "<br>";
-        echo "pid: " . $PID . "<br>";
+        echo "result: " . $retval . "  ";
+        print_r($output); echo "<br>";
     }
+    return $output;
 }
 
 ?>

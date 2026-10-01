@@ -135,22 +135,6 @@ var debugMode = document.getElementById("debugMode");
 var debugFrame = document.getElementById("debugFrame");
 var termfncgenproc = false;
 
-// Close button event handler   
-/*
-setInterval(function() {
-    if (termfncgenproc) {
-        termfncgenproc = false;
-        runState.value = "off";
-        frmControl.submit();
-    }
-}, 200);
-
-window.addEventListener('beforeunload', function (e) {
-    termfncgenproc = true;
-	e.preventDefault();
-	e.returnValue = '';
-});
-*/
 // Event handlers for function generator controls
 
 ampVal.innerHTML = ampSet.value;
@@ -167,7 +151,7 @@ function init(){
     runState.value = "off";
     debugMode.value = _DEBUG_MODE;
     if(_DEBUG_MODE == "true") {
-        debugFrame.height = "60";
+        debugFrame.height = "auto";
     } else {
         debugFrame.height = "0";
     }

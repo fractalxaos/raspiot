@@ -174,7 +174,6 @@ def terminateAgentProcess(signal, frame):
 ##end def
 
     ### PUBLIC FUNCTIONS ###
-
 def checkForAltimeterReset(altitudeSensor):
     if os.path.exists(_ALTIMETER_RESET_FILE):
         # Get current pressure in kPa.
@@ -360,18 +359,18 @@ def generateDayGraphs():
     """
     rrdb.createAutoGraph('1d_altitude', 'altitude', 'meters', \
                          'Altitude', 'now-1d', 0, 0, 0, True)
-    rrdb.createAutoGraph('1d_pressure', 'pressure', 'inches\ Hg', \
-                         'Barometric\ Pressure', 'now-1d', 0, 0, 0, True)
+    rrdb.createAutoGraph('1d_pressure', 'pressure', 'inches Hg', \
+                         'Barometric Pressure', 'now-1d', 0, 0, 0, True)
     rrdb.createAutoGraph('1d_temperature', 'temperature', \
-                         'degrees\ Fahrenheit', \
+                         'degrees Fahrenheit', \
                          'Temperature', 'now-1d', 0, 0, 0, True)
     rrdb.createAutoGraph('10d_altitude', 'altitude', 'meters', \
                          'Altitude', 'end-10days', 0, 0, 0, True)
-    rrdb.createAutoGraph('10d_pressure', 'pressure', 'inches\ Hg', \
-                         'Barometric\ Pressure', 'end-10days', \
+    rrdb.createAutoGraph('10d_pressure', 'pressure', 'inches Hg', \
+                         'Barometric Pressure', 'end-10days', \
                          0, 0, 0, True)
     rrdb.createAutoGraph('10d_temperature', 'temperature', \
-                         'degrees\ Fahrenheit', \
+                         'degrees Fahrenheit', \
                          'Temperature', 'end-10days', 0, 0, 0, True)
 ##end def
 

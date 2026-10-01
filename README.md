@@ -9,6 +9,9 @@ details on each project and how to procure parts, hookup hardware, and install t
 
 <p>These apps are intended for an audience with a moderate background in Raspberry Pi, the Linux operating system, and web devops.  The hookup guide provides links to a variety of subjects on Raspberry Pi, web development topics, and programming languages used in these apps.</p>
 
+<p>Note that everything in this repository has been updated to work with Raspbian Trixie
+operating system.  Compatibility with previous versions has not been tested.</p>
+
 <h3>Project Hookup Guides</h3>
 <ul>
 <li><a href="./led/docs/raspberrypi_led_hookup.pdf">LED</a></li>

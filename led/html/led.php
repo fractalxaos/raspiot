@@ -61,12 +61,12 @@ define("DEBUG", false);
 
 # Setup up the GPIO pin the LED is connected to as an
 # an output to the LED.
-$cmd = sprintf("gpio -g mode %s out", _GPIO_PIN);
+$cmd = sprintf("pinctrl %s op", _GPIO_PIN);
 doCmd($cmd);
 
 # Read the current state of the GPIO pin to which
 # the LED is connected.
-$cmd = sprintf("gpio -g read %s", _GPIO_PIN);
+$cmd = sprintf("pinctrl lev %s", _GPIO_PIN);
 $output = doCmd($cmd);
 $ledState = $output[0];
 
@@ -99,7 +99,8 @@ if (isset($_POST["led_state"])) {
 <?php
 # Write the new LED state to the GPIO pin to which the
 # LED is connected.
-$cmd = sprintf("gpio -g write %s %s", _GPIO_PIN, $ledState);
+$ledLevel = ($ledState == 1) ? 'dh' : 'dl';
+$cmd = sprintf("pinctrl set %s %s", _GPIO_PIN, $ledLevel);
 doCmd($cmd);
 
 function doCmd($cmd) {

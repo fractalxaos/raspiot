@@ -4,7 +4,8 @@
 #
 # Description:
 # This module acts as an hardware abstraction layer providing an
-# interface between the ADS1115 device and higher level Python scripts.
+# interface between the ADS1115 analog to digital converter device
+# and higher level Python scripts.
 #
 # Copyright 2021 Jeff Owrey
 #    This program is free software: you can redistribute it and/or modify
@@ -22,7 +23,6 @@
 #
 # Revision History
 #   * v10 released 12 Dec 2021 by J L Owrey; first release
-#   * v11 issued 23 May 2024 by J L Owrey; improved write configuration data
 #
 #12345678901234567890123456789012345678901234567890123456789012345678901234567890
  
@@ -68,7 +68,7 @@ class ads1115:
         """
         Description:
         Initializes the ADS1115 sensor at the supplied address 
-        (default address is 0x60), and supplied bus (default is 1).
+        (default address is 0x48), and supplied bus (default is 1).
         Creates a new SMBus object for each instance of this class
         and writes configuration data (two bytes) to the ADS1115
         configuration registers.
@@ -105,8 +105,9 @@ class ads1115:
 
         # Write configuration data to configuration register _CONFIG_REG.
         # Break up configuration data into bytes.
-        lData = [config >> 8] # byte 1
-        lData.append(config & 0xFF) # byte 2
+        lData = [config >> 8]
+        #lData += [config & 0xFF]
+        lData.append(config & 0xFF)
  
         if self.debugMode:
             print('PGA_val: %d' % PGA_val)
@@ -142,8 +143,8 @@ class ads1115:
         self.config = (config & 0x8FFF) | (source << 12) 
 
         # Break up configuration data into bytes.
-        lData = [self.config >> 8] # byte 1
-        lData.append(self.config & 0xFF) # byte 2
+        lData = [self.config >> 8]
+        lData += [self.config & 0xFF]
 
         if self.debugMode:
             print('setting input source: %d' % source)
@@ -173,9 +174,6 @@ class ads1115:
         
         if val > 0x7FFF:
             val -= 0xFFFF
-
-        # Convert binary voltage to decimal. LSB conversion factor determined
-        # by configuration of programable gain amplifier.
         return val * self.volts_lsb
     ## end def
 ## end class

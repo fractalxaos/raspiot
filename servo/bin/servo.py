@@ -170,8 +170,10 @@ def cleanup(signal, frame):
         frame  - dummy parameter
     Returns: nothing.
     """
-    pwm.ChangeDutyCycle(0) # set servo angle to 0 degrees
+    global pwm
     GPIO.output(SERVO_CONTROL_PIN, False)
+    pwm.stop()
+    del pwm
     GPIO.cleanup() # reset GPIO to defaults
     exit(0)
 ## end def
@@ -217,12 +219,9 @@ def getCLarguments():
     try:
         while index < len(sys.argv):
             if sys.argv[index] == '-a':
-                try:
-                    angle = float(sys.argv[index + 1])
-                    assert (angle >= 0) and (angle <= 180)
-                except:
-                    print('invalid angle')
-                    exit(-1)
+                angle = float(sys.argv[index + 1])
+                assert angle >= 0 and angle <= 180, \
+                    'invalid angle'
                 index += 1
             elif sys.argv[index] == '-c':
                 runContinuous = True
